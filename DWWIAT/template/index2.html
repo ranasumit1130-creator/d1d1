@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TACTICAL DEMO // engagement_sim_v4</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;700&family=Space+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue-neon: #00D9FF;
+            --red-neon: #FF3B30;
+            --bg-dark: #05070a;
+            --grid-color: rgba(0, 217, 255, 0.05);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Space Mono', monospace;
+            overflow: hidden;
+        }
+
+        /* Military Grid Background */
+        #map-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        /* HUD UI */
+        .hud-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--blue-neon);
+            padding: 15px;
+            min-width: 250px;
+            pointer-events: none;
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
+        }
+
+        .hud-header {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: var(--blue-neon);
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--blue-neon);
+            padding-bottom: 5px;
+        }
+
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .val-blue { color: var(--blue-neon); font-weight: bold; }
+        .val-red { color: var(--red-neon); font-weight: bold; }
+
+        /* Final Result Overlay */
+        #victory-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(5, 7, 10, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .victory-text {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--blue-neon);
+            letter-spacing: 10px;
+            text-shadow: 0 0 30px var(--blue-neon);
+            margin-bottom: 20px;
+        }
+
+        .final-stats {
+            text-align: center;
+            border: 1px solid var(--blue-neon);
+            padding: 20px 40px;
+            background: rgba(0, 217, 255, 0.05);
+        }
+
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+
+    <div id="map-bg"></div>
+    
+    <div class="hud-panel">
+        <div class="hud-header">STRATEGIC ENGAGEMENT</div>
+        <div class="stat-line">STATUS: <span style="color: #34C759;">ACTIVE</span></div>
+        <div class="stat-line">BLUE (ATTACKER): <span id="blue-count" class="val-blue">100</span></div>
+        <div class="stat-line">RED (DEFENDER): <span id="red-count" class="val-red">30</span></div>
+        <div class="stat-line">OBJECTIVE: <span style="color: white;">SECTOR_7_B</span></div>
+    </div>
+
+    <div id="victory-overlay">
+        <div class="victory-text">BLUE FORCE VICTORY</div>
+        <div class="final-stats">
+            <div class="stat-line">TOTAL DRONES DEPLOYED: <span class="val-blue">100</span></div>
+            <div class="stat-line">SURVIVING ASSETS: <span id="final-survivors" class="val-blue">--</span></div>
+            <div class="stat-line">RED DEFENSES DESTROYED: <span class="val-red">100%</span></div>
+            <button onclick="location.reload()" style="margin-top:20px; padding:10px 20px; background:transparent; border:1px solid var(--blue-neon); color:var(--blue-neon); cursor:pointer; font-family:'Space Mono';">RESET SIMULATION</button>
+        </div>
+    </div>
+
+    <canvas id="battleCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('battleCanvas');
+    const ctx = canvas.getContext('2d');
+    const blueCountEl = document.getElementById('blue-count');
+    const redCountEl = document.getElementById('red-count');
+    const overlay = document.getElementById('victory-overlay');
+    const survivorsEl = document.getElementById('final-survivors');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let drones = [];
+    let redDefenses = [];
+    let particles = [];
+    let frame = 0;
+    let battleOver = false;
+
+    class Drone {
+        constructor() {
+            this.x = -50 - Math.random() * 500;
+            this.y = Math.random() * canvas.height;
+            this.speed = 1.5 + Math.random() * 2;
+            this.alive = true;
+            this.size = 3;
+            this.color = '#00D9FF';
+        }
+
+        update() {
+            if (!this.alive) return;
+            this.x += this.speed;
+            
+            // Random jitter
+            this.y += Math.sin(frame * 0.05) * 0.5;
+
+            // Simple Collision with invisible Red Line
+            if (this.x > canvas.width * 0.6 && this.x < canvas.width * 0.8) {
+                if (Math.random() < 0.003) { // 0.3% chance of getting hit per frame in danger zone
+                    this.destroy();
+                }
+            }
+        }
+
+        destroy() {
+            this.alive = false;
+            createExplosion(this.x, this.y, '#FF3B30');
+        }
+
+        draw() {
+            if (!this.alive) return;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = this.color;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    class RedDefense {
+        constructor(index) {
+            this.x = canvas.width - (100 + Math.random() * 200);
+            this.y = (canvas.height / 30) * index + 20;
+            this.alive = true;
+            this.shootCooldown = 0;
+        }
+
+        update() {
+            if (battleOver) return;
+            if (drones.filter(d => d.alive && d.x > canvas.width * 0.5).length > 20) {
+                 if (Math.random() < 0.01) this.destroy();
+            }
+        }
+
+        destroy() {
+            if(this.alive) {
+                this.alive = false;
+                createExplosion(this.x, this.y, '#FF3B30');
+            }
+        }
+
+        draw() {
+            if (!this.alive) return;
+            ctx.strokeStyle = '#FF3B30';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.rect(this.x, this.y, 15, 15);
+            ctx.stroke();
+            
+            // Draw Laser line occasionally
+            if (Math.random() > 0.98) {
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + 7.5);
+                ctx.lineTo(this.x - 200, this.y + 7.5 + (Math.random() - 0.5) * 50);
+                ctx.strokeStyle = 'rgba(255, 59, 48, 0.3)';
+                ctx.stroke();
+            }
+        }
+    }
+
+    function createExplosion(x, y, color) {
+        for (let i = 0; i < 10; i++) {
+            particles.push({
+                x, y,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
+                life: 1.0,
+                color
+            });
+        }
+    }
+
+    // Init
+    for (let i = 0; i < 100; i++) drones.push(new Drone());
+    for (let i = 0; i < 30; i++) redDefenses.push(new RedDefense(i));
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        frame++;
+
+        let aliveBlue = drones.filter(d => d.alive).length;
+        let aliveRed = redDefenses.filter(r => r.alive).length;
+
+        blueCountEl.innerText = aliveBlue;
+        redCountEl.innerText = aliveRed;
+
+        // Draw Particles
+        particles.forEach((p, i) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.02;
+            ctx.fillStyle = `rgba(${p.color === '#00D9FF' ? '0,217,255' : '255,59,48'}, ${p.life})`;
+            ctx.fillRect(p.x, p.y, 2, 2);
+            if (p.life <= 0) particles.splice(i, 1);
+        });
+
+        // Update & Draw Drones
+        drones.forEach(d => {
+            d.update();
+            d.draw();
+        });
+
+        // Update & Draw Red
+        redDefenses.forEach(r => {
+            r.update();
+            r.draw();
+        });
+
+        // Check Victory Condition
+        const reachedEnd = drones.some(d => d.alive && d.x > canvas.width + 50);
+        if ((aliveRed === 0 || reachedEnd) && !battleOver) {
+            endSimulation(aliveBlue);
+        }
+
+        if (!battleOver) requestAnimationFrame(animate);
+    }
+
+    function endSimulation(survivors) {
+        battleOver = true;
+        setTimeout(() => {
+            overlay.style.display = 'flex';
+            survivorsEl.innerText = survivors;
+        }, 1000);
+    }
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+    animate();
+</script>
+</body>
+</html>

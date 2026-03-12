@@ -1,0 +1,767 @@
+{% extends 'config/base.html' %}
+{% load static %}
+
+{% block title %}STEP 5: FINAL REVIEW :: FORCE CONFIG{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --accent: {% if force_type == 'blue' %}#00d2ff{% else %}#ff3e3e{% endif %};
+        --accent-rgb: {% if force_type == 'blue' %}0, 210, 255{% else %}255, 62, 62{% endif %};
+    }
+    
+    .content-area {
+        position: relative;
+        min-height: 100vh;
+        padding-top: 80px;
+        padding-bottom: 40px;
+        margin-top: 50px;
+    }
+    
+    .hud-panel {
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-left: 4px solid var(--accent);
+        padding: 25px;
+        margin-bottom: 25px;
+        clip-path: polygon(0 0, 96% 0, 100% 4%, 100% 100%, 4% 100%, 0 96%);
+    }
+    
+    .hud-title {
+        font-family: 'Orbitron', sans-serif;
+        color: var(--accent);
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .hud-title i {
+        font-size: 1.2rem;
+    }
+    
+    .review-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-left: 3px solid var(--accent);
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 3px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+    }
+    
+    .review-item-title {
+        font-family: 'Orbitron', sans-serif;
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 600;
+        min-width: 150px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .review-item-value {
+        font-family: 'Share Tech Mono', monospace;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.85rem;
+        line-height: 1.6;
+        flex: 1;
+        text-align: right;
+    }
+    
+    .sub-list {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 8px;
+        padding-left: 15px;
+        border-left: 2px solid rgba(var(--accent-rgb), 0.5);
+    }
+    
+    .sub-list-item {
+        padding: 4px 0;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+    
+    .sub-list-label {
+        color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .sub-list-value {
+        color: var(--accent);
+        font-weight: bold;
+    }
+    
+    .coords-block {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.75rem;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 8px;
+        border-radius: 3px;
+        margin: 5px 0;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.5;
+    }
+    
+    .ads-system {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.8rem;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 8px 12px;
+        border-radius: 3px;
+        margin: 5px 0;
+        border-left: 3px solid var(--accent);
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.5;
+    }
+    
+    .drone-role-box {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 10px;
+        border-radius: 3px;
+        margin: 5px 0;
+        border-left: 3px solid var(--accent);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .drone-role-name {
+        font-weight: bold;
+        color: rgba(255, 255, 255, 0.9);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .drone-role-count {
+        color: var(--accent);
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    
+    .drone-role-percent {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.8rem;
+        margin-left: 10px;
+    }
+    
+    .base-target-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 12px;
+        margin-top: 10px;
+    }
+    
+    .base-target-card {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-left: 3px solid var(--accent);
+        padding: 12px;
+        border-radius: 3px;
+    }
+    
+    .card-label {
+        font-family: 'Orbitron', sans-serif;
+        color: var(--accent);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+    }
+    
+    .card-name {
+        font-family: 'Share Tech Mono', monospace;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+    
+    .card-coords {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.5;
+    }
+    
+    .btn-submit-main {
+        width: 100%;
+        background: var(--accent);
+        color: #000;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 900;
+        font-size: 1.2rem;
+        padding: 20px;
+        border: none;
+        margin-top: 30px;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: 0.3s;
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+    }
+    
+    .btn-submit-main:hover:not(:disabled) {
+        box-shadow: 0 0 30px var(--accent);
+    }
+
+    .btn-submit-main:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .step-indicator {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--accent);
+        padding: 15px;
+        margin-bottom: 30px;
+        border-radius: 4px;
+        font-family: 'Share Tech Mono', monospace;
+        color: var(--accent);
+    }
+    
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+    }
+    
+    .stat-box {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--accent);
+        padding: 12px;
+        border-radius: 3px;
+        text-align: center;
+    }
+    
+    .stat-label {
+        font-family: 'Space Mono', monospace;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.5);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .stat-value {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1.8rem;
+        color: var(--accent);
+        font-weight: 700;
+        margin-top: 5px;
+    }
+    
+    .empty-section {
+        font-family: 'Share Tech Mono', monospace;
+        color: rgba(255, 153, 51, 0.8);
+        font-style: italic;
+        padding: 10px;
+        background: rgba(255, 153, 51, 0.1);
+        border-left: 3px solid #ff9933;
+        border-radius: 3px;
+    }
+    
+    .info-text {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 8px;
+        line-height: 1.5;
+    }
+    
+    @media (max-width: 1200px) {
+        .grid-2 {
+            grid-template-columns: 1fr;
+        }
+        .grid-3 {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .grid-3 {
+            grid-template-columns: 1fr;
+        }
+        .review-item {
+            flex-direction: column;
+        }
+        .review-item-value {
+            text-align: left;
+        }
+        .base-target-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-area">
+    <div class="container-fluid px-5">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-lg-12">
+                <h1 style="font-family: 'Orbitron'; color: white; margin-bottom: 10px;">STEP 5 :: FINAL REVIEW</h1>
+                <div class="step-indicator">
+                    <span>► STEP 5 OF 5: REVIEW & SAVE CONFIGURATION</span>
+                    <p style="margin: 8px 0 0 0;">Review all configuration below. After saving, you will configure the opposing {% if force_type == 'blue' %}RED{% else %}BLUE{% endif %} force.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SCENARIO & CONFIGURATION OVERVIEW -->
+        <div class="hud-panel">
+            <div class="hud-title">
+                <i class="fas fa-map-marker-alt"></i> SCENARIO & CONFIGURATION OVERVIEW
+            </div>
+            
+            <div class="review-item">
+                <div class="review-item-title">Scenario Type</div>
+                <div class="review-item-value" id="scenarioReview">Loading...</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <div class="stat-box">
+                    <div class="stat-label">Bases</div>
+                    <div class="stat-value" id="baseCountReview">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Targets</div>
+                    <div class="stat-value" id="targetCountReview">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total Drones</div>
+                    <div class="stat-value" id="droneCountReview">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- OPERATIONAL BASES SECTION -->
+        <div class="hud-panel">
+            <div class="hud-title">
+                <i class="fas fa-shield-alt"></i> OPERATIONAL BASES
+            </div>
+            <div id="basesDetailContainer">
+                <div class="empty-section">Loading base data...</div>
+            </div>
+        </div>
+        
+        <!-- TARGET POSITIONS SECTION -->
+        <div class="hud-panel">
+            <div class="hud-title">
+                <i class="fas fa-bullseye"></i> TARGET POSITIONS
+            </div>
+            <div id="targetsDetailContainer">
+                <div class="empty-section">Loading target data...</div>
+            </div>
+        </div>
+        
+        <!-- SWARM COMPOSITION -->
+        <div class="hud-panel">
+            <div class="hud-title">
+                <i class="fas fa-robot"></i> SWARM COMPOSITION & COSTING
+            </div>
+            
+            <div class="review-item">
+                <div class="review-item-title">Target Type</div>
+                <div class="review-item-value" id="targetTypeReview">Not configured</div>
+            </div>
+            
+            <div class="review-item">
+                <div class="review-item-title">Total Drones</div>
+                <div class="review-item-value" id="swarmTotalReview">0 UNITS</div>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <div style="font-family: 'Orbitron', sans-serif; color: rgba(255,255,255,0.7); font-size: 0.8rem; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">Drone Roles Breakdown</div>
+                <div id="compositionBreakdownContainer"></div>
+            </div>
+            
+            <div class="review-item" style="margin-top: 15px;">
+                <div class="review-item-title">Total Mission Cost</div>
+                <div class="review-item-value" id="totalCostReview" style="color: #FFD700;">$0</div>
+            </div>
+        </div>
+        
+        <!-- ADS CONFIGURATION (Red force only) -->
+        <div id="adsPanel" style="display: none;">
+            <div class="hud-panel">
+                <div class="hud-title">
+                    <i class="fas fa-shield-check"></i> AIR DEFENSE SYSTEMS DEPLOYMENT
+                </div>
+                
+                <div class="review-item">
+                    <div class="review-item-title">Total ADS Systems</div>
+                    <div class="review-item-value" id="adsCountReview">0</div>
+                </div>
+                
+                <div class="review-item">
+                    <div class="review-item-title">Average Coverage</div>
+                    <div class="review-item-value" id="adsAvgCoverageReview">0 km</div>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <div style="font-family: 'Orbitron', sans-serif; color: rgba(255,255,255,0.7); font-size: 0.8rem; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">Deployed Systems</div>
+                    <div id="adsDetailContainer"></div>
+                </div>
+                
+                <div id="adsCoverageContainer" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+        
+        <!-- CONFIGURATION SUMMARY -->
+        <div class="hud-panel">
+            <div class="hud-title">
+                <i class="fas fa-list-check"></i> CONFIGURATION COMPLETION STATUS
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 10px;">
+                <div class="stat-box">
+                    <div class="stat-label">Step 1</div>
+                    <div class="stat-value" id="step1Status" style="font-size: 1.5rem;">✓</div>
+                    <div style="font-size: 0.7rem; color: #00ff41; margin-top: 3px;">Scenario</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Step 2</div>
+                    <div class="stat-value" id="step2Status" style="font-size: 1.5rem;">✓</div>
+                    <div style="font-size: 0.7rem; color: #00ff41; margin-top: 3px;">Placement</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Step 3</div>
+                    <div class="stat-value" id="step3Status" style="font-size: 1.5rem;">✓</div>
+                    <div style="font-size: 0.7rem; color: #00ff41; margin-top: 3px;">Swarm</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Step 4</div>
+                    <div class="stat-value" id="step4Status" style="font-size: 1.5rem;">—</div>
+                    <div style="font-size: 0.7rem; color: #8A8A8E; margin-top: 3px;">Defense</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Step 5</div>
+                    <div class="stat-value" id="step5Status" style="font-size: 1.5rem;">⧗</div>
+                    <div style="font-size: 0.7rem; color: var(--accent); margin-top: 3px;">Review</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SAVE BUTTON -->
+        <div style="text-align: center; margin-top: 30px;">
+            <button type="button" class="btn-submit-main" id="saveBtn" onclick="saveConfiguration()">
+                ✓ SAVE {{ force_type|upper }} FORCE CONFIGURATION
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+const missionId = {{ mission.id }};
+const forceType = '{{ force_type }}';
+
+function loadReview() {
+    fetch(`/config/api/force-config/?mission=${missionId}&force=${forceType}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        console.log('Config data:', data);
+        
+        // STEP 1: SCENARIO
+        document.getElementById('scenarioReview').textContent = 
+            formatScenarioName(data.scenario || 'Not configured');
+        
+        // STEP 2: BASES & TARGETS
+        const bases = data.bases || [];
+        const targets = data.targets || [];
+        
+        document.getElementById('baseCountReview').textContent = bases.length;
+        document.getElementById('targetCountReview').textContent = targets.length;
+        
+        renderBases(bases);
+        renderTargets(targets);
+        
+        // STEP 3: SWARM DATA
+        const swarmComposition = data.swarm_composition || {};
+        const totalDrones = Object.values(swarmComposition).reduce((a, b) => a + (b.count || b || 0), 0);
+        
+        document.getElementById('droneCountReview').textContent = totalDrones;
+        document.getElementById('swarmTotalReview').textContent = totalDrones + ' UNITS';
+        
+        document.getElementById('targetTypeReview').textContent = 
+            data.target_type ? data.target_type.toUpperCase().replace(/_/g, ' ') : 'Not configured';
+        
+        renderComposition(swarmComposition);
+        
+        const totalCost = data.total_cost || 0;
+        document.getElementById('totalCostReview').textContent = 
+            '$' + totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        // STEP STATUS
+        document.getElementById('step1Status').textContent = '✓';
+        document.getElementById('step1Status').style.color = '#00ff41';
+        document.getElementById('step2Status').textContent = bases.length > 0 && targets.length > 0 ? '✓' : '⚠';
+        document.getElementById('step2Status').style.color = bases.length > 0 && targets.length > 0 ? '#00ff41' : '#ff9933';
+        document.getElementById('step3Status').textContent = totalDrones > 0 ? '✓' : '⚠';
+        document.getElementById('step3Status').style.color = totalDrones > 0 ? '#00ff41' : '#ff9933';
+        
+        // STEP 4: ADS DATA (Red force only)
+        if (forceType === 'red') {
+            document.getElementById('adsPanel').style.display = 'block';
+            const ads = data.ads || [];
+            document.getElementById('adsCountReview').textContent = ads.length;
+            
+            if (ads.length > 0) {
+                const avgCoverage = Math.round(
+                    ads.reduce((sum, sys) => sum + (sys.detection_range || 0), 0) / ads.length
+                );
+                document.getElementById('adsAvgCoverageReview').textContent = avgCoverage + ' km';
+            }
+            
+            renderADS(ads);
+            document.getElementById('step4Status').textContent = ads.length > 0 ? '✓' : '⚠';
+            document.getElementById('step4Status').style.color = ads.length > 0 ? '#00ff41' : '#ff9933';
+        } else {
+            document.getElementById('adsPanel').style.display = 'none';
+            document.getElementById('step4Status').textContent = '—';
+            document.getElementById('step4Status').style.color = '#8A8A8E';
+        }
+    })
+    .catch(err => {
+        console.error('Error loading config:', err);
+        document.getElementById('scenarioReview').textContent = 'Error loading data';
+    });
+}
+
+function formatScenarioName(scenario) {
+    const mapping = {
+        'ONE_BASE_ONE_TARGET': '1:1 SINGLE SORTIE',
+        'ONE_BASE_MULTIPLE_TARGETS': '1:M MULTI-STRIKE',
+        'MULTIPLE_BASES_ONE_TARGET': 'M:1 CONVERGENCE',
+        'MULTIPLE_BASES_MULTIPLE_TARGETS': 'M:M TOTAL WAR'
+    };
+    return mapping[scenario] || scenario.replace(/_/g, ' ');
+}
+
+function renderBases(bases) {
+    const container = document.getElementById('basesDetailContainer');
+    
+    if (!bases || bases.length === 0) {
+        container.innerHTML = '<div class="empty-section">No bases configured</div>';
+        return;
+    }
+    
+    let html = '<div class="base-target-grid">';
+    bases.forEach((base, idx) => {
+        html += `
+            <div class="base-target-card">
+                <div class="card-label">Base ${idx + 1}</div>
+                <div class="card-name">${base.name || 'Unnamed Base'}</div>
+                <div class="card-coords">
+                    LAT: <strong>${(base.lat || 0).toFixed(6)}</strong><br>
+                    LON: <strong>${(base.lon || 0).toFixed(6)}</strong><br>
+                    <span style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem;">Coordinate Precision: 6 Dec</span>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function renderTargets(targets) {
+    const container = document.getElementById('targetsDetailContainer');
+    
+    if (!targets || targets.length === 0) {
+        container.innerHTML = '<div class="empty-section">No targets configured</div>';
+        return;
+    }
+    
+    let html = '<div class="base-target-grid">';
+    targets.forEach((target, idx) => {
+        html += `
+            <div class="base-target-card">
+                <div class="card-label">Target ${idx + 1}</div>
+                <div class="card-name">${target.name || 'Unnamed Target'}</div>
+                <div class="card-coords">
+                    LAT: <strong>${(target.lat || 0).toFixed(6)}</strong><br>
+                    LON: <strong>${(target.lon || 0).toFixed(6)}</strong><br>
+                    <span style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem;">Coordinate Precision: 6 Dec</span>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function renderComposition(composition) {
+    const container = document.getElementById('compositionBreakdownContainer');
+    
+    if (!composition || Object.keys(composition).length === 0) {
+        container.innerHTML = '<div class="empty-section">No drone composition configured</div>';
+        return;
+    }
+    
+    let html = '';
+    let totalDrones = 0;
+    const compositionArray = [];
+    
+    // Handle both object formats
+    Object.entries(composition).forEach(([key, value]) => {
+        const count = typeof value === 'object' ? (value.count || 0) : (value || 0);
+        totalDrones += count;
+        compositionArray.push({ role: key, count: count });
+    });
+    
+    compositionArray.forEach(({ role, count }) => {
+        const percentage = totalDrones > 0 ? Math.round((count / totalDrones) * 100) : 0;
+        
+        html += `
+            <div class="drone-role-box">
+                <div>
+                    <div class="drone-role-name">${role.toUpperCase().replace(/_/g, ' ')}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="drone-role-count">${count}</div>
+                    <div class="drone-role-percent">${percentage}%</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: right; font-weight: bold; color: var(--accent);">TOTAL: ${totalDrones} UNITS</div>`;
+    
+    container.innerHTML = html;
+}
+
+function renderADS(ads) {
+    const container = document.getElementById('adsDetailContainer');
+    const coverageContainer = document.getElementById('adsCoverageContainer');
+    
+    if (!ads || ads.length === 0) {
+        container.innerHTML = '<div class="empty-section">No ADS systems deployed</div>';
+        coverageContainer.innerHTML = '';
+        return;
+    }
+    
+    let adsHtml = '';
+    let totalDetectionCoverage = 0;
+    let totalInterceptCoverage = 0;
+    
+    ads.forEach((system, idx) => {
+        const sysName = system.ads_type_name || system.system_name || system.name || 'Unknown System';
+        const detRange = system.detection_range || 0;
+        const intRange = system.intercept_range || 0;
+        
+        totalDetectionCoverage += detRange;
+        totalInterceptCoverage += intRange;
+        
+        adsHtml += `
+            <div class="ads-system">
+                <strong style="font-size: 0.95rem;">█ System ${idx + 1}: ${sysName}</strong><br>
+                <span style="opacity: 0.8;">Location: </span>
+                LAT <strong>${(system.latitude || 0).toFixed(6)}</strong> | 
+                LON <strong>${(system.longitude || 0).toFixed(6)}</strong><br>
+                <span style="opacity: 0.8;">Range: </span>
+                Detection <strong style="color: #FF6B6B;">${detRange} km</strong> | 
+                Intercept <strong style="color: #FF3E3E;">${intRange} km</strong>
+            </div>
+        `;
+    });
+    
+    let coverageHtml = '<div style="font-family: \'Orbitron\', sans-serif; color: rgba(255,255,255,0.7); font-size: 0.8rem; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">Coverage Analysis</div>';
+    
+    const avgDetection = Math.round(totalDetectionCoverage / ads.length);
+    const avgIntercept = Math.round(totalInterceptCoverage / ads.length);
+    
+    coverageHtml += `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="stat-box">
+                <div class="stat-label">Avg Detection</div>
+                <div class="stat-value" style="font-size: 1.5rem;">${avgDetection}</div>
+                <div style="font-size: 0.7rem; color: #FF6B6B; margin-top: 3px;">km radius</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Avg Intercept</div>
+                <div class="stat-value" style="font-size: 1.5rem;">${avgIntercept}</div>
+                <div style="font-size: 0.7rem; color: #FF3E3E; margin-top: 3px;">km radius</div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = adsHtml;
+    coverageContainer.innerHTML = coverageHtml;
+}
+
+function saveConfiguration() {
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.textContent = 'SAVING...';
+    
+    fetch('/config/api/step5/save-config/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            mission_id: missionId,
+            force_type: forceType,
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            if (forceType === 'blue') {
+                window.location.href = `/config/mission/${missionId}/force-select/?msg=Blue_force_configured_now_configure_red`;
+            } else {
+                window.location.href = `/config/mission/${missionId}/simulation-ready/?msg=Both_forces_configured`;
+            }
+        } else {
+            alert('Error: ' + data.error);
+            btn.disabled = false;
+            btn.textContent = '✓ SAVE ' + forceType.toUpperCase() + ' FORCE CONFIGURATION';
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('Error saving configuration');
+        btn.disabled = false;
+        btn.textContent = '✓ SAVE ' + forceType.toUpperCase() + ' FORCE CONFIGURATION';
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+
+document.addEventListener('DOMContentLoaded', loadReview);
+</script>
+
+<script src="{% static 'js/wizard-navigation.js' %}"></script>
+{% endblock %}

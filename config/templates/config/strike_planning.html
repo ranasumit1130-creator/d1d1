@@ -1,0 +1,504 @@
+{% extends 'config/base.html' %}
+{% load static %}
+
+{% block title %}STRIKE PLANNING :: {{ mission.name }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Saira+Condensed:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+    /* ── Page scaffold ── */
+    body { background: #1a1c16; }
+    footer { display: none !important; }
+
+    .sp-wrap {
+        padding: 88px 24px 60px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* ── Page header ── */
+    .sp-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 28px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #2e3620;
+    }
+    .sp-step-label {
+        font-family: 'Saira Condensed', sans-serif;
+        font-size: 10px;
+        letter-spacing: 4px;
+        color: #6b7f3b;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+    .sp-title {
+        font-family: 'Black Ops One', cursive;
+        font-size: clamp(22px, 3.5vw, 32px);
+        color: #e8e6d9;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin: 0;
+    }
+    .sp-subtitle {
+        font-family: 'Saira Condensed', sans-serif;
+        font-size: 12px;
+        color: #5a6640;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-top: 4px;
+    }
+    .sp-force-badge {
+        font-family: 'Black Ops One', cursive;
+        font-size: 11px;
+        letter-spacing: 3px;
+        padding: 6px 14px;
+        border: 1px solid currentColor;
+        text-transform: uppercase;
+    }
+    .sp-force-badge.blue { color: #4a9fd4; border-color: #4a9fd4; }
+    .sp-force-badge.red  { color: #e74c3c; border-color: #e74c3c; }
+
+    /* ── Loading / error states ── */
+    #sp-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 60px 0;
+        color: #6b7f3b;
+        font-family: 'Saira Condensed', sans-serif;
+        font-size: 11px;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+    }
+    .sp-spinner {
+        width: 36px; height: 36px;
+        border: 3px solid #2a3a14;
+        border-top-color: #8fa94e;
+        border-radius: 50%;
+        animation: sp-spin .75s linear infinite;
+    }
+    @keyframes sp-spin { to { transform: rotate(360deg); } }
+    #sp-error {
+        display: none;
+        background: rgba(231,76,60,.08);
+        border-left: 4px solid #e74c3c;
+        color: #e74c3c;
+        padding: 14px 20px;
+        font-family: 'Saira Condensed', sans-serif;
+        font-size: 13px;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+    }
+
+    /* ── StrikeUI mount ── */
+    #sp-ui { display: none; }
+
+    /* ── Confirm bar (shown after formation selected + impact computed) ── */
+    #sp-confirm-bar {
+        display: none;
+        position: sticky;
+        bottom: 0;
+        z-index: 200;
+        background: rgba(10, 12, 8, 0.97);
+        border-top: 2px solid #6b7f3b;
+        padding: 14px 28px;
+        backdrop-filter: blur(12px);
+        display: none;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px;
+        justify-content: space-between;
+    }
+    .sp-confirm-info {
+        font-family: 'Saira Condensed', sans-serif;
+        font-size: 11px;
+        letter-spacing: 2px;
+        color: #8fa94e;
+        text-transform: uppercase;
+    }
+    .sp-confirm-info strong {
+        font-size: 15px;
+        color: #a4c639;
+        letter-spacing: 1px;
+    }
+    .sp-confirm-effectiveness {
+        font-family: 'Black Ops One', cursive;
+        font-size: 22px;
+        letter-spacing: 2px;
+    }
+    .sp-confirm-effectiveness.green  { color: #a4c639; }
+    .sp-confirm-effectiveness.amber  { color: #d4a017; }
+    .sp-confirm-effectiveness.red    { color: #e74c3c; }
+
+    .sp-btn-confirm {
+        font-family: 'Black Ops One', cursive;
+        font-size: 13px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        background: #6b7f3b;
+        color: #0d0f0a;
+        border: 2px solid #a4c639;
+        padding: 12px 32px;
+        cursor: pointer;
+        transition: background .15s;
+    }
+    .sp-btn-confirm:hover { background: #a4c639; }
+    .sp-btn-confirm:disabled {
+        opacity: .4;
+        cursor: not-allowed;
+    }
+    .sp-btn-skip {
+        font-family: 'Saira Condensed', sans-serif;
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        background: transparent;
+        color: #5a6640;
+        border: 1px solid #3a4a20;
+        padding: 10px 20px;
+        cursor: pointer;
+        transition: color .15s, border-color .15s;
+    }
+    .sp-btn-skip:hover { color: #8fa94e; border-color: #6b7f3b; }
+
+    /* ── Save toast ── */
+    #sp-toast {
+        display: none;
+        position: fixed;
+        bottom: 80px; right: 24px;
+        background: rgba(10,12,8,.96);
+        border: 1px solid #3a4a20;
+        border-left: 4px solid #6b7f3b;
+        color: #a4c639;
+        padding: 10px 18px;
+        font-family: 'Saira Condensed', sans-serif;
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        z-index: 9999;
+        backdrop-filter: blur(8px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sp-wrap">
+
+    <!-- Header -->
+    <div class="sp-header">
+        <div>
+            <div class="sp-step-label">Strike Planning</div>
+            <h1 class="sp-title">{{ mission.name }}</h1>
+            <div class="sp-subtitle">Formation selection &amp; impact analysis</div>
+        </div>
+        <span class="sp-force-badge {{ force_type }}">{{ force_type|upper }} FORCE</span>
+    </div>
+
+    <!-- States -->
+    <div id="sp-error"></div>
+    <div id="sp-loading">
+        <div class="sp-spinner"></div>
+        COMPUTING STRIKE FORMATIONS…
+    </div>
+
+    <!-- StrikeUI renders here -->
+    <div id="sp-ui"></div>
+
+</div><!-- /.sp-wrap -->
+
+<!-- Confirm bar (sticky footer, shown after impact computed) -->
+<div id="sp-confirm-bar">
+    <div class="sp-confirm-info">
+        SELECTED: <strong id="sp-confirm-name">—</strong>
+    </div>
+    <div>
+        <span style="font-family:'Saira Condensed',sans-serif;font-size:10px;letter-spacing:2px;color:#5a6640;text-transform:uppercase;">Effectiveness</span>
+        <div class="sp-confirm-effectiveness" id="sp-confirm-eff">—</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+        <button class="sp-btn-skip" onclick="skipToReview()">SKIP TO ADS CONFIG</button>
+        <button class="sp-btn-confirm" id="sp-confirm-btn" onclick="confirmSelection()">
+            ✓ CONFIRM &amp; PROCEED TO ADS CONFIG
+        </button>
+    </div>
+</div>
+
+<div id="sp-toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- strikeUI.js: plain class, no export — must be classic script -->
+<script src="{% static 'js/strikeUI.js' %}"></script>
+
+<script type="module">
+    import { haversine }           from "{% static 'js/physics.js' %}";
+    import {
+        mapDroneToEngine,
+        mapTargetToEngine,
+        suggestFormations,
+        computeImpact,
+    }                              from "{% static 'js/formationEngine.js' %}";
+    import { buildSimulationData } from "{% static 'js/simulationDataBuilder.js' %}";
+    import { simState }            from "{% static 'js/simState.js' %}";
+
+    // ── Data injected by Django view ──────────────────────────
+    const MISSION_ID  = {{ mission_id }};
+    const FORCE_TYPE  = "{{ force_type }}";
+    const NEXT_URL    = "/config/mission/{{ mission_id }}/force/{{ force_type }}/step4/";
+    const SAVE_URL        = "{% url 'config:api_strike_planning_save' %}";
+    const SAVE_RECORD_URL = "{% url 'config:api_save_strike_record' %}";
+    const CESIUM_URL      = "{% url 'config:simulation_cesium' mission_id=mission_id %}";
+    const CSRF_TOKEN      = "{{ csrf_token }}";
+
+    const rawBases   = {{ bases_json|safe }};
+    const rawTargets = {{ targets_json|safe }};
+    const dronesData = {{ drones_json|safe }};
+    const ADS_COUNT  = {{ ads_count }};
+
+    // ── DOM ───────────────────────────────────────────────────
+    const $ui       = document.getElementById('sp-ui');
+    const $loading  = document.getElementById('sp-loading');
+    const $error    = document.getElementById('sp-error');
+    const $bar      = document.getElementById('sp-confirm-bar');
+    const $barName  = document.getElementById('sp-confirm-name');
+    const $barEff   = document.getElementById('sp-confirm-eff');
+    const $barBtn   = document.getElementById('sp-confirm-btn');
+    const $toast    = document.getElementById('sp-toast');
+
+    // ── State ─────────────────────────────────────────────────
+    let _selected = null;   // { formation, impact, simulationData }
+
+    function showError(msg) {
+        $loading.style.display = 'none';
+        $error.style.display   = 'block';
+        $error.textContent     = '⚠ ' + msg;
+    }
+
+    function showToast(msg, ok = true) {
+        $toast.style.borderLeftColor = ok ? '#6b7f3b' : '#e74c3c';
+        $toast.style.color           = ok ? '#a4c639' : '#e74c3c';
+        $toast.textContent           = msg;
+        $toast.style.display         = 'block';
+        setTimeout(() => { $toast.style.display = 'none'; }, 3000);
+    }
+
+    // ── Normalise step-3 target format for mapTargetToEngine ─
+    // Step-3 stores: { lat, lon, name, details: { type, ctr_cap_scale, ... } }
+    // mapTargetToEngine expects: { latitude, longitude, target_type, ... }
+    function normaliseTarget(raw) {
+        const details  = raw.details || {};
+        const typeRaw  = (details.type || 'soft').toLowerCase();
+        const ctrCap   = parseFloat(details.ctr_cap_scale || 0);
+
+        // HARD/SOFT → protection_level consumed by mapTargetToEngine
+        const protection = typeRaw === 'hard' ? 'high' : 'low';
+
+        // CTR CAP 0-5 → ads_density
+        const density =
+            ctrCap <= 1 ? 'low' :
+            ctrCap <= 3 ? 'medium' : 'high';
+
+        const normalised = {
+            ...raw,
+            latitude:    raw.lat,
+            longitude:   raw.lon,
+            target_type: typeRaw === 'hard' ? 'fixed' : 'mobile',
+        };
+
+        return mapTargetToEngine(normalised, {
+            protection_level:    protection,
+            ads_density:         density,
+            ads_placement_count: ADS_COUNT,
+        });
+    }
+
+    // ── Expand drone inventory (one object per unit, capped at 30/type) ─
+    function expandInventory(dronesData) {
+        const inv = [];
+        for (const drone of dronesData) {
+            const eng   = mapDroneToEngine(drone);
+            const units = Math.min(drone.count, 30);
+            for (let i = 0; i < units; i++) {
+                inv.push({ ...eng, instanceId: `${drone.id}_${i}` });
+            }
+        }
+        return inv;
+    }
+
+    // ── Confirm bar logic ─────────────────────────────────────
+    function showConfirmBar(formation) {
+        const eff = formation.stats?.effectiveness ?? 0;
+        $barName.textContent = formation.name;
+        $barEff.textContent  = eff.toFixed(0) + '%';
+        $barEff.className    = 'sp-confirm-effectiveness ' +
+            (eff >= 80 ? 'green' : eff >= 50 ? 'amber' : 'red');
+        $bar.style.display   = 'flex';
+    }
+
+    // ── Fire-and-forget: persist strike record to MissionReport ─
+    async function _saveRecord(formation, impact, simulationData) {
+        const allDrones = [
+            ...(formation.attackDrones  ?? []),
+            ...(formation.supportDrones ?? []),
+        ];
+        try {
+            await fetch(SAVE_RECORD_URL, {
+                method:    'POST',
+                keepalive: true,
+                headers: {
+                    'Content-Type':     'application/json',
+                    'X-CSRFToken':      CSRF_TOKEN,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    mission_id:      MISSION_ID,
+                    force_type:      FORCE_TYPE,
+                    formation_name:  formation.name,
+                    target_id:       null,
+                    base_id:         null,
+                    drones_used:     allDrones.length,
+                    distance_km:     _selected.distanceKm,
+                    effectiveness:   formation.stats?.effectiveness ?? 0,
+                    impact_data:     impact.combined,
+                    simulation_data: simulationData,
+                }),
+            }).then(r => r.json()).then(j => {
+                if (j.status === 'SUCCESS') {
+                    simState.patch(MISSION_ID, { recordId: j.record_id });
+                }
+            });
+        } catch (_) { /* non-critical */ }
+    }
+
+    // ── Confirm: POST to Django, advance to Step 4 ────────────
+    window.confirmSelection = async function () {
+        if (!_selected) return;
+        $barBtn.disabled    = true;
+        $barBtn.textContent = 'SAVING…';
+
+        const { formation, impact } = _selected;
+        const payload = {
+            mission_id:     MISSION_ID,
+            force_type:     FORCE_TYPE,
+            formation_name: formation.name,
+            attack_drones:  (formation.attackDrones  ?? []).map(d => ({ id: d.id, name: d.name, role: d.role })),
+            support_drones: (formation.supportDrones ?? []).map(d => ({ id: d.id, name: d.name, role: d.role })),
+            distance_km:    _selected.distanceKm,
+            effectiveness:  formation.stats?.effectiveness ?? 0,
+            impact_data:    impact,
+        };
+
+        try {
+            const resp = await fetch(SAVE_URL, {
+                method:  'POST',
+                headers: {
+                    'Content-Type':     'application/json',
+                    'X-CSRFToken':      CSRF_TOKEN,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify(payload),
+            });
+            const json = await resp.json();
+            if (json.success) {
+                // Fire-and-forget: persist to MissionReport for history/reports
+                _saveRecord(formation, impact, _selected.simulationData);
+                window.location.href = json.next_url || NEXT_URL;
+            } else {
+                showToast('⚠ SAVE FAILED: ' + (json.error || 'unknown'), false);
+                $barBtn.disabled    = false;
+                $barBtn.textContent = '✓ CONFIRM & PROCEED TO ADS CONFIG';
+            }
+        } catch (e) {
+            showToast('⚠ SAVE FAILED', false);
+            $barBtn.disabled    = false;
+            $barBtn.textContent = '✓ CONFIRM & PROCEED TO ADS CONFIG';
+        }
+    };
+
+    // ── Skip: go to step 5 without saving a plan ─────────────
+    window.skipToReview = function () {
+        window.location.href = NEXT_URL;
+    };
+
+    // ── Init ──────────────────────────────────────────────────
+    function init() {
+        if (!rawBases.length) {
+            showError('No bases found. Complete Step 2 first.');
+            return;
+        }
+        if (!rawTargets.length) {
+            showError('No targets found. Complete Step 2 first.');
+            return;
+        }
+        if (!dronesData.length) {
+            showError('No drone assets in swarm. Complete Step 3 first.');
+            return;
+        }
+
+        const rawBase    = rawBases[0];
+        const rawTarget  = rawTargets[0];
+        const distKm     = haversine(rawBase.lat, rawBase.lon, rawTarget.lat, rawTarget.lon);
+        const engTarget  = normaliseTarget(rawTarget);
+        const inventory  = expandInventory(dronesData);
+
+        // Ensure base has latitude/longitude for simulationDataBuilder
+        const normBase = { ...rawBase, latitude: rawBase.lat, longitude: rawBase.lon };
+
+        const formations = suggestFormations(engTarget, inventory, distKm);
+
+        $loading.style.display = 'none';
+        $ui.style.display      = 'block';
+
+        new window.StrikeUI($ui, {
+            formations,
+            target:     engTarget,
+            distanceKm: distKm,
+
+            onComputeImpact(formation) {
+                const impact = computeImpact(formation, distKm);
+
+                // Annotate damage zones with human-readable dims (used by StrikeUI labels)
+                impact.combined.damageZones.__craterRadius =
+                    impact.combined.craterRadius_m  + ' m';
+                impact.combined.damageZones.__craterDepth  =
+                    impact.combined.craterDepth_m   + ' m';
+                impact.combined.damageZones.__fragRange    =
+                    impact.combined.fragmentRange_m + ' m';
+
+                const simulationData = buildSimulationData(
+                    formation, impact, normBase, engTarget, distKm
+                );
+
+                _selected = { formation, impact, simulationData, distanceKm: distKm };
+
+                // Persist to sessionStorage for Cesium page
+                simState.save(MISSION_ID, {
+                    missionId:     MISSION_ID,
+                    forceType:     FORCE_TYPE,
+                    formationName: formation.name,
+                    target:        engTarget,
+                    distanceKm:    distKm,
+                    formation,
+                    impact,
+                    simulationData,
+                    recordId:      null,
+                    cesiumUrl:     CESIUM_URL,
+                });
+
+                showConfirmBar(formation);
+                return impact;
+            },
+
+            onBack() {
+                window.location.href =
+                    `/config/mission/${MISSION_ID}/force/${FORCE_TYPE}/step3/`;
+            },
+        });
+    }
+
+    init();
+</script>
+{% endblock %}

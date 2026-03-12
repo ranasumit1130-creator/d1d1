@@ -1,0 +1,1380 @@
+{% extends 'config/base.html' %}
+{% load static %}
+
+{% block title %}TACTICAL MAP PLACEMENT // DRONE WARFARE COMMAND{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'Cesium/Build/CesiumUnminified/Widgets/widgets.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    :root {
+        --primary-accent: #00D9FF;
+        --primary-glow: rgba(0, 217, 255, 0.4);
+        --cyber-green: #00FF41;
+        --warning: #FFB700;
+        --success: #34C759;
+        --enemy: #FF3B30;
+        --neutral-text: #E8E8E8;
+        --secondary-text: #8A8A8E;
+        --dark-bg: #0B0E11;
+        --panel-bg: rgba(15, 20, 25, 0.20);
+        --t-olive: #4A5D4E;
+        --gold: #FFD700;
+        --army-dark: #080A0C;
+    }
+
+    footer {
+        display: none !important;
+    }
+
+    body {
+        font-family: 'Rajdhani', sans-serif;
+        background: var(--dark-bg);
+        color: var(--neutral-text);
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .placement-content {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        padding: 0;
+        margin: 0;
+        z-index: 1;
+    }
+
+    .placement-header {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 50;
+        max-width: 400px;
+        margin: 0;
+    }
+
+    .placement-title {
+        font-size: 24px;
+        margin-bottom: 4px;
+        color: var(--neutral-text);
+    }
+
+    .placement-subtitle {
+        font-size: 10px;
+        margin-bottom: 0;
+        color: var(--secondary-text);
+    }
+
+    #cesiumContainer {
+        width: 100%;
+        height: 100vh;
+        background: #1a1a1a;
+        border: none;
+        border-radius: 0;
+        display: block;
+    }
+
+    .cesium-viewer .cesium-viewer-geocoderContainer {
+        top: 20px !important;
+        left: 20px !important;
+        width: auto !important;
+        z-index: 10 !important;
+    }
+
+    .cesium-geocoder-input {
+        background: rgba(0, 0, 0, 0.8) !important;
+        border: 1.5px solid var(--t-olive) !important;
+        color: var(--neutral-text) !important;
+        font-family: 'Space Mono', monospace !important;
+        border-radius: 4px !important;
+    }
+
+    .cesium-geocoder-input::placeholder {
+        color: var(--secondary-text) !important;
+    }
+
+    .cesium-geocoder-selectedResult {
+        background: var(--t-olive) !important;
+        color: var(--gold) !important;
+    }
+
+    #coordsBox {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 100;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1.5px solid var(--t-olive);
+        padding: 12px 20px;
+        border-radius: 4px;
+        font-family: 'Space Mono', monospace;
+        font-size: 13px;
+        color: var(--cyber-green);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        letter-spacing: 1px;
+    }
+
+    .control-panel-overlay {
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        width: 380px;
+        max-height: calc(100vh - 140px);
+        z-index: 51;
+        background: rgba(15, 20, 25, 0.95);
+        border: 1.5px solid var(--t-olive);
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+        padding: 20px;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transform: translateX(420px);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .control-panel-overlay.open {
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .control-panel-toggle {
+        position: fixed;
+        top: 100px;
+        width: 45px;
+        height: 45px;
+        z-index: 52;
+        background: rgba(15, 20, 25, 0.95);
+        border: 1.5px solid var(--t-olive);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        font-size: 22px;
+        color: var(--gold);
+        border-radius: 8px 0 0 8px;
+        right: 20px;
+    }
+
+    .control-panel-toggle.open {
+        right: 410px;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .control-panel-toggle:hover {
+        background: rgba(15, 20, 25, 0.99);
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+        transform: scale(1.05);
+    }
+
+    @media (max-width: 1024px) {
+        .control-panel-toggle {
+            display: none;
+        }
+        
+        .control-panel-overlay {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+    }
+
+    .scenario-display-box {
+        background: rgba(74, 93, 78, 0.2);
+        border: 1px solid var(--t-olive);
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        font-size: 12px;
+        color: var(--gold);
+        text-align: center;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+
+    .section-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        color: var(--gold);
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .section-title.bases::before {
+        content: '🛡️';
+        font-size: 14px;
+    }
+
+    .section-title.targets::before {
+        content: '🎯';
+        font-size: 14px;
+    }
+
+    .position-card {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid var(--t-olive);
+        border-radius: 4px;
+        padding: 12px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .position-card:hover {
+        background: rgba(0, 0, 0, 0.6);
+        border-color: var(--gold);
+        box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .card-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--neutral-text);
+    }
+
+    .card-actions {
+        display: flex;
+        gap: 6px;
+    }
+
+    .btn-small {
+        background: transparent;
+        border: 1px solid var(--t-olive);
+        color: var(--cyber-green);
+        padding: 4px 10px;
+        font-size: 9px;
+        font-weight: 700;
+        border-radius: 2px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Space Mono', monospace;
+    }
+
+    .btn-small:hover:not(:disabled) {
+        background: rgba(0, 255, 65, 0.1);
+        border-color: var(--cyber-green);
+        color: var(--cyber-green);
+    }
+
+    .btn-small:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        color: var(--secondary-text);
+    }
+
+    .btn-small.btn-delete {
+        color: var(--enemy);
+        border-color: var(--enemy);
+        padding: 4px 8px;
+    }
+
+    .btn-small.btn-delete:hover {
+        background: rgba(255, 59, 48, 0.1);
+        border-color: var(--enemy);
+    }
+
+    .card-coords {
+        font-size: 10px;
+        color: var(--secondary-text);
+        font-family: 'Space Mono', monospace;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 8px;
+        border-radius: 2px;
+        line-height: 1.4;
+    }
+
+    .btn-add-more {
+        width: 100%;
+        background: transparent;
+        border: 1.5px dashed var(--t-olive);
+        color: var(--gold);
+        padding: 10px;
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Rajdhani', sans-serif;
+        margin-bottom: 16px;
+        letter-spacing: 1px;
+    }
+
+    .btn-add-more:hover {
+        background: rgba(255, 215, 0, 0.1);
+        border-color: var(--gold);
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    }
+
+    .status-box {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+        margin: 16px 0;
+        padding: 12px;
+        background: rgba(74, 93, 78, 0.15);
+        border: 1px solid var(--t-olive);
+        border-radius: 4px;
+    }
+
+    .status-item {
+        text-align: center;
+    }
+
+    .status-label {
+        font-size: 9px;
+        color: var(--secondary-text);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+
+    .status-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--cyber-green);
+        font-family: 'Space Mono', monospace;
+    }
+
+    .btn-launch {
+        width: 100%;
+        background: transparent;
+        border: 2px solid var(--gold);
+        color: var(--gold);
+        padding: 14px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Oxanium', sans-serif;
+        text-transform: uppercase;
+        margin-top: 12px;
+    }
+
+    .btn-launch:hover:not(:disabled) {
+        background: var(--gold);
+        color: #000;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    }
+
+    .btn-launch:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        border-color: #444;
+        color: #444;
+    }
+
+    .pin-mode-indicator {
+        position: fixed;
+        bottom: 120px;
+        right: 30px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1.5px solid var(--t-olive);
+        padding: 12px 16px;
+        border-radius: 4px;
+        font-size: 12px;
+        color: var(--secondary-text);
+        z-index: 100;
+        display: none;
+        font-weight: 700;
+        backdrop-filter: blur(8px);
+    }
+
+    .pin-mode-indicator.active {
+        display: block;
+        color: var(--cyber-green);
+        border-color: var(--cyber-green);
+        box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    /* MODAL STYLES */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        z-index: 200;
+        backdrop-filter: blur(4px);
+        pointer-events: none;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+    }
+
+    .modal-dialog {
+        background: rgba(15, 20, 25, 0.98);
+        border: 1.5px solid var(--t-olive);
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 90vw;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        pointer-events: auto;
+    }
+
+    #targetDetailsForm {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        width: 100%;
+    }
+
+    #targetDetailsForm .form-group {
+        margin-bottom: 0;
+    }
+
+    #targetDetailsForm .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    #targetDetailsForm .dimension-group {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    #targetDetailsForm .range-section {
+        grid-column: 1 / -1;
+    }
+
+    .modal-footer {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        border-top: 1px solid var(--t-olive);
+        padding-top: 16px;
+        grid-column: 1 / -1;
+    }
+
+    .btn-modal {
+        flex: 1;
+        background: transparent;
+        border: 1.5px solid var(--t-olive);
+        color: var(--gold);
+        padding: 12px 16px;
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Rajdhani', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn-modal:hover {
+        background: rgba(255, 215, 0, 0.1);
+        border-color: var(--gold);
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    }
+
+    .btn-modal.save {
+        background: rgba(255, 215, 0, 0.15);
+        border-color: var(--gold);
+        color: var(--gold);
+    }
+
+    .btn-modal.save:hover {
+        background: var(--gold);
+        color: #000;
+    }
+
+    .btn-modal.cancel {
+        color: var(--enemy);
+        border-color: var(--enemy);
+    }
+
+    .btn-modal.cancel:hover {
+        background: rgba(255, 59, 48, 0.1);
+        border-color: var(--enemy);
+    }
+
+    @media (max-width: 1024px) {
+        #targetDetailsForm {
+            grid-template-columns: 1fr;
+        }
+
+        #targetDetailsForm .dimension-group {
+            grid-column: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .modal-dialog {
+            max-width: 95vw;
+            padding: 16px;
+        }
+        
+        #targetDetailsForm {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="placement-content">
+    <div class="placement-header">
+        <div class="placement-title">TACT<span>ICAL_MAP</span></div>
+        <div class="placement-subtitle">[ POSITION DESIGNATION ]</div>
+    </div>
+
+    <div id="cesiumContainer"></div>
+
+    <div id="coordsBox">Lat: -- , Lon: --</div>
+
+    <div class="pin-mode-indicator" id="pinModeIndicator">
+        📍 CLICK ON MAP TO PLACE
+    </div>
+
+    <div class="control-panel-toggle" id="panelToggle" onclick="togglePanel()">
+        ◀
+    </div>
+
+    <div class="control-panel-overlay" id="controlPanel">
+        <div class="scenario-display-box" id="scenarioDisplay">
+            Loading scenario...
+        </div>
+
+        <div>
+            <div class="section-title bases">OPERATIONAL BASES</div>
+            <div id="basesContainer"></div>
+            <button id="addBaseBtn" class="btn-add-more" onclick="addMoreBases()" style="display:none;">
+                <i class="fas fa-plus"></i> ADD BASE
+            </button>
+        </div>
+
+        <div>
+            <div class="section-title targets">TARGET POSITIONS</div>
+            <div id="targetsContainer"></div>
+            <button id="addTargetBtn" class="btn-add-more" onclick="addMoreTargets()" style="display:none;">
+                <i class="fas fa-plus"></i> ADD TARGET
+            </button>
+        </div>
+
+        <div class="status-box">
+            <div class="status-item">
+                <div class="status-label">Bases</div>
+                <div class="status-value"><span id="baseCount">0</span></div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Targets</div>
+                <div class="status-value"><span id="targetCount">0</span></div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Paths</div>
+                <div class="status-value"><span id="pathCount">0</span></div>
+            </div>
+        </div>
+
+        <button class="btn-launch" onclick="savePlacement()" id="saveBtn" disabled>
+            <i class="fas fa-check-circle"></i> CONFIRM PLACEMENT
+        </button>
+    </div>
+
+    <!-- TARGET DETAILS MODAL -->
+    <div class="modal-overlay" id="targetDetailsModal">
+        <div class="modal-dialog">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="font-size: 14px; font-weight: 700; color: var(--gold); letter-spacing: 1px;">TARGET DETAILS - <span id="modalTargetName">Target</span></div>
+                <button style="background: none; border: none; color: var(--gold); font-size: 18px; cursor: pointer;" onclick="closeTargetDetailsModal()">✕</button>
+            </div>
+
+            <form id="targetDetailsForm">
+                <div class="form-group">
+                    <label class="form-label">Target Type</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="typeHard" name="type" value="hard" required>
+                            <label for="typeHard">HARD</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="typeSoft" name="type" value="soft">
+                            <label for="typeSoft">SOFT</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Size</label>
+                    <input type="text" name="size" class="form-input" placeholder="e.g., 50m x 30m" maxlength="50">
+                </div>
+
+                <div class="form-group full-width">
+                    <label class="form-label">Dimensions</label>
+                    <div class="dimension-group">
+                        <div>
+                            <label class="form-label" style="font-size: 9px; margin-bottom: 4px;">Width (m)</label>
+                            <input type="number" name="dimension_width" class="form-input" placeholder="Width" min="0" step="0.1">
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: 9px; margin-bottom: 4px;">Length (m)</label>
+                            <input type="number" name="dimension_length" class="form-input" placeholder="Length" min="0" step="0.1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Height (m)</label>
+                    <input type="number" name="height" class="form-input" placeholder="Height in meters" min="0" step="0.1">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Profile</label>
+                    <select name="profile" class="form-select" required>
+                        <option value="">-- Select Profile --</option>
+                        <option value="exposed">EXPOSED</option>
+                        <option value="protected">PROTECTED</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Disposition</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="dispStatic" name="disposition" value="static" required>
+                            <label for="dispStatic">STATIC</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="dispMoving" name="disposition" value="moving">
+                            <label for="dispMoving">MOVING</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Recognisability</label>
+                    <select name="recognisability" class="form-select" required>
+                        <option value="">-- Select Level --</option>
+                        <option value="high">HIGH</option>
+                        <option value="medium">MEDIUM</option>
+                        <option value="low">LOW</option>
+                    </select>
+                </div>
+
+                <div class="form-group full-width range-section">
+                    <label class="form-label">CTR CAP Scale (0-5)</label>
+                    <input type="range" name="ctr_cap_scale" class="form-input range-input" min="0" max="5" value="0" 
+                           oninput="updateScaleDisplay(this.value)">
+                    <div class="range-value-display" id="scaleDisplay">0</div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-modal cancel" onclick="closeTargetDetailsModal()">CANCEL</button>
+                    <button type="submit" class="btn-modal save">SAVE DETAILS</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'Cesium/Build/CesiumUnminified/Cesium.js' %}"></script>
+
+<script>
+    let targetDetailsData = {};
+    let currentEditingTargetId = null;
+
+    function updateScaleDisplay(value) {
+        const display = document.getElementById('scaleDisplay');
+        if (display) display.textContent = value;
+    }
+
+    function openTargetDetailsModal(targetId) {
+        if (!targetId || !targets) return;
+        
+        const target = targets.find(t => t.id === targetId);
+        if (!target) return;
+
+        currentEditingTargetId = targetId;
+        const nameSpan = document.getElementById('modalTargetName');
+        if (nameSpan) nameSpan.textContent = target.name;
+
+        if (targetDetailsData[targetId]) {
+            const data = targetDetailsData[targetId];
+            const typeRadio = document.querySelector(`input[name="type"][value="${data.type}"]`);
+            if (typeRadio) typeRadio.checked = true;
+            
+            const sizeInput = document.querySelector('input[name="size"]');
+            if (sizeInput) sizeInput.value = data.size || '';
+            
+            const widthInput = document.querySelector('input[name="dimension_width"]');
+            if (widthInput) widthInput.value = data.dimension_width || '';
+            
+            const lengthInput = document.querySelector('input[name="dimension_length"]');
+            if (lengthInput) lengthInput.value = data.dimension_length || '';
+            
+            const heightInput = document.querySelector('input[name="height"]');
+            if (heightInput) heightInput.value = data.height || '';
+            
+            const profileSelect = document.querySelector('select[name="profile"]');
+            if (profileSelect) profileSelect.value = data.profile || '';
+            
+            const dispRadio = document.querySelector(`input[name="disposition"][value="${data.disposition}"]`);
+            if (dispRadio) dispRadio.checked = true;
+            
+            const recogSelect = document.querySelector('select[name="recognisability"]');
+            if (recogSelect) recogSelect.value = data.recognisability || '';
+            
+            const scaleInput = document.querySelector('input[name="ctr_cap_scale"]');
+            if (scaleInput) scaleInput.value = data.ctr_cap_scale || 0;
+            
+            updateScaleDisplay(data.ctr_cap_scale || 0);
+        } else {
+            const form = document.getElementById('targetDetailsForm');
+            if (form) form.reset();
+            updateScaleDisplay(0);
+        }
+
+        const modal = document.getElementById('targetDetailsModal');
+        if (modal) {
+            modal.classList.add('active');
+            modal.style.pointerEvents = 'auto';
+        }
+    }
+
+    function closeTargetDetailsModal() {
+        const modal = document.getElementById('targetDetailsModal');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.style.pointerEvents = 'none';
+        }
+        currentEditingTargetId = null;
+    }
+
+    // Modal event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('targetDetailsForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (!currentEditingTargetId) return;
+                
+                const formData = new FormData(this);
+                targetDetailsData[currentEditingTargetId] = {
+                    type: formData.get('type'),
+                    size: formData.get('size'),
+                    dimension_width: formData.get('dimension_width'),
+                    dimension_length: formData.get('dimension_length'),
+                    height: formData.get('height'),
+                    profile: formData.get('profile'),
+                    disposition: formData.get('disposition'),
+                    recognisability: formData.get('recognisability'),
+                    ctr_cap_scale: formData.get('ctr_cap_scale')
+                };
+
+                console.log('Target details saved:', targetDetailsData[currentEditingTargetId]);
+                closeTargetDetailsModal();
+                renderCards();
+            });
+        }
+
+        const modalOverlay = document.getElementById('targetDetailsModal');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeTargetDetailsModal();
+                }
+            });
+        }
+
+        const modalDialog = document.querySelector('.modal-dialog');
+        if (modalDialog) {
+            modalDialog.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+    });
+</script>
+
+<script>
+    const viewer = new Cesium.Viewer("cesiumContainer", {
+        imageryProvider: new Cesium.OpenStreetMapImageryProvider(),
+        baseLayerPicker: false,
+        sceneModePicker: false,
+        navigationHelpButton: false,
+        fullscreenButton: false,
+        homeButton: false,
+        infoBox: false,
+        selectionIndicator: false,
+        timeline: false,
+        animation: false,
+        sceneMode: Cesium.SceneMode.SCENE3D,
+        geocoder: true
+    });
+
+    viewer.imageryLayers.addImageryProvider(
+        new Cesium.UrlTemplateImageryProvider({
+            url: "{% static 'Cesium/Build/CesiumUnminified/Assets/Textures/NaturalEarthII/' %}{z}/{x}/{y}.jpg",
+            tilingScheme: new Cesium.WebMercatorTilingScheme(),
+            minimumLevel: 1,
+            maximumLevel: 6,
+        })
+    );
+
+    function setupMouseCoords(viewer) {
+        const box = document.getElementById("coordsBox");
+        const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+        handler.setInputAction((movement) => {
+            const pos = movement.endPosition;
+            let cartesian = viewer.scene.pickPosition(pos);
+            if (!Cesium.defined(cartesian)) {
+                cartesian = viewer.camera.pickEllipsoid(pos, viewer.scene.globe.ellipsoid);
+            }
+
+            if (Cesium.defined(cartesian)) {
+                const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                const lat = Cesium.Math.toDegrees(cartographic.latitude).toFixed(6);
+                const lon = Cesium.Math.toDegrees(cartographic.longitude).toFixed(6);
+                box.textContent = `Lat: ${lat} , Lon: ${lon}`;
+            } else {
+                box.textContent = `Lat: -- , Lon: --`;
+            }
+        }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+    }
+    setupMouseCoords(viewer);
+
+    async function loadTerrainAndAutoFly(viewer) {
+        try {
+            const terrainUrl = "/static/terrain/?t=" + Date.now();
+            const terrain = await Cesium.CesiumTerrainProvider.fromUrl(terrainUrl);
+            viewer.terrainProvider = terrain;
+            viewer.scene.morphTo3D(0);
+            viewer.scene.globe.depthTestAgainstTerrain = true;
+            viewer.scene.globe.terrainExaggeration = 2.5;
+            console.log("Terrain loaded ✅");
+        } catch (err) {
+            console.error("Terrain load failed ❌", err);
+        }
+    }
+
+    loadTerrainAndAutoFly(viewer);
+
+    // MAIN APP LOGIC
+    console.log('Page loaded');
+
+    const ATTACK_DRONE_RANGE_KM = 150;
+    const SCENARIO_MAPPING = {
+        'ONE_BASE_ONE_TARGET': '1-1',
+        'ONE_BASE_MULTIPLE_TARGETS': '1-M',
+        'MULTIPLE_BASES_ONE_TARGET': 'M-1',
+        'MULTIPLE_BASES_MULTIPLE_TARGETS': 'M-M'
+    };
+
+    const SCENARIO_RULES = {
+        '1-1': {bases: 1, targets: 1},
+        '1-M': {bases: 1, targets: -1},
+        'M-1': {bases: -1, targets: 1},
+        'M-M': {bases: -1, targets: -1}
+    };
+
+    const SCENARIO_FROM_SERVER = '{{ config.scenario }}';
+    const MISSION_ID = '{{ mission.id }}';
+    const FORCE_TYPE = '{{ force_type }}';
+
+    let bases = [];
+    let targets = [];
+    let paths = [];
+    let mapEntities = {};
+    let pinMode = null;
+    let currentScenario = null;
+    let handler = null;
+
+    function initScenarioFromServer() {
+        let scenarioKey = SCENARIO_FROM_SERVER.trim();
+        if (SCENARIO_MAPPING[scenarioKey]) {
+            scenarioKey = SCENARIO_MAPPING[scenarioKey];
+        }
+        scenarioKey = scenarioKey.replace(/\s*-\s*/g, '-');
+        currentScenario = scenarioKey;
+        console.log('Current scenario:', currentScenario);
+        
+        const displayText = {
+            '1-1': '1:1 SINGLE SORTIE',
+            '1-M': '1:M MULTI-STRIKE',
+            'M-1': 'M:1 CONVERGENCE',
+            'M-M': 'M:M TOTAL WAR'
+        };
+        
+        const scenarioDisplay = document.getElementById('scenarioDisplay');
+        if (scenarioDisplay) {
+            scenarioDisplay.textContent = displayText[scenarioKey] || scenarioKey;
+        }
+        onScenarioSet(scenarioKey);
+    }
+
+    function onScenarioSet(scenario) {
+        const rules = SCENARIO_RULES[scenario] || {bases: 1, targets: 1};
+        console.log('Scenario rules:', rules);
+
+        bases = [];
+        targets = [];
+
+        if (rules.bases > 0) {
+            for (let i = 0; i < rules.bases; i++) {
+                bases.push({id: `base_${Date.now()}_${i}`, name: `Base ${i + 1}`, lat: null, lon: null});
+            }
+        }
+        if (rules.targets > 0) {
+            for (let i = 0; i < rules.targets; i++) {
+                targets.push({id: `target_${Date.now()}_${i}`, name: `Target ${i + 1}`, lat: null, lon: null});
+            }
+        }
+
+        const addBaseBtn = document.getElementById('addBaseBtn');
+        if (addBaseBtn) addBaseBtn.style.display = rules.bases < 0 ? 'block' : 'none';
+        
+        const addTargetBtn = document.getElementById('addTargetBtn');
+        if (addTargetBtn) addTargetBtn.style.display = rules.targets < 0 ? 'block' : 'none';
+        
+        renderCards();
+    }
+
+    function setupMapClickHandlers() {
+        if (!viewer) {
+            console.error('Viewer not initialized');
+            return;
+        }
+        
+        handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+        
+        handler.setInputAction((movement) => {
+            if (!pinMode) return;
+            
+            const cartesian = viewer.scene.pickPosition(movement.position) || 
+                            viewer.camera.pickEllipsoid(movement.position, viewer.scene.globe.ellipsoid);
+            if (!cartesian) return;
+            
+            const carto = Cesium.Cartographic.fromCartesian(cartesian);
+            const lat = Cesium.Math.toDegrees(carto.latitude);
+            const lon = Cesium.Math.toDegrees(carto.longitude);
+            
+            console.log('Placed position at:', lat, lon);
+            
+            if (pinMode.type === 'base') {
+                placeBase(pinMode.id, lat, lon);
+            } else {
+                placeTarget(pinMode.id, lat, lon);
+            }
+            
+            pinMode = null;
+            updatePinIndicator();
+            renderCards();
+            recalculatePaths();
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    }
+
+    function updatePinIndicator() {
+        const indicator = document.getElementById('pinModeIndicator');
+        if (indicator) {
+            if (pinMode) {
+                indicator.classList.add('active');
+            } else {
+                indicator.classList.remove('active');
+            }
+        }
+    }
+
+    function renderCards() {
+        renderBaseCards();
+        renderTargetCards();
+        updateStatus();
+    }
+
+    function renderBaseCards() {
+        const container = document.getElementById('basesContainer');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        bases.forEach(b => {
+            const div = document.createElement('div');
+            div.className = 'position-card';
+            div.innerHTML = `
+                <div class="card-header">
+                    <div class="card-name">${b.name}</div>
+                    <div class="card-actions">
+                        <button class="btn-small" onclick="startPin('base','${b.id}')" ${b.lat ? 'disabled' : ''}>
+                            ${b.lat ? '✓ PLACED' : 'PIN'}
+                        </button>
+                        <button class="btn-small btn-delete" onclick="deleteBase('${b.id}')">✕</button>
+                    </div>
+                </div>
+                <div class="card-coords">
+                    LAT: ${b.lat ? b.lat.toFixed(4) : '—'}<br>
+                    LON: ${b.lon ? b.lon.toFixed(4) : '—'}
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function renderTargetCards() {
+        const container = document.getElementById('targetsContainer');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        targets.forEach(t => {
+            const hasDetails = targetDetailsData[t.id];
+            const div = document.createElement('div');
+            div.className = 'position-card';
+            div.innerHTML = `
+                <div class="card-header">
+                    <div class="card-name">${t.name}</div>
+                    <div class="card-actions">
+                        <button class="btn-small" onclick="startPin('target','${t.id}')" ${t.lat ? 'disabled' : ''}>
+                            ${t.lat ? '✓ PLACED' : 'PIN'}
+                        </button>
+                        <button class="btn-small" onclick="openTargetDetailsModal('${t.id}')" title="Add target details">
+                            ${hasDetails ? '📋 EDIT' : '📋 ADD'}
+                        </button>
+                        <button class="btn-small btn-delete" onclick="deleteTarget('${t.id}')">✕</button>
+                    </div>
+                </div>
+                <div class="card-coords">
+                    LAT: ${t.lat ? t.lat.toFixed(4) : '—'}<br>
+                    LON: ${t.lon ? t.lon.toFixed(4) : '—'}
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function addMoreBases() {
+        bases.push({id: `base_${Date.now()}`, name: `Base ${bases.length + 1}`, lat: null, lon: null});
+        renderCards();
+    }
+
+    function addMoreTargets() {
+        targets.push({id: `target_${Date.now()}`, name: `Target ${targets.length + 1}`, lat: null, lon: null});
+        renderCards();
+    }
+
+    function deleteBase(id) {
+        const idx = bases.findIndex(b => b.id === id);
+        if (idx >= 0) {
+            if (mapEntities[id]) viewer.entities.remove(mapEntities[id]);
+            delete mapEntities[id];
+            bases.splice(idx, 1);
+            renderCards();
+            recalculatePaths();
+        }
+    }
+
+    function deleteTarget(id) {
+        const idx = targets.findIndex(t => t.id === id);
+        if (idx >= 0) {
+            if (mapEntities[id]) viewer.entities.remove(mapEntities[id]);
+            delete mapEntities[id];
+            targets.splice(idx, 1);
+            renderCards();
+            recalculatePaths();
+        }
+    }
+
+    function startPin(type, id) {
+        pinMode = {type, id};
+        updatePinIndicator();
+        console.log('Pin mode activated for', type, id);
+    }
+
+    function placeBase(id, lat, lon) {
+        const b = bases.find(x => x.id === id);
+        if (!b) return;
+        b.lat = lat;
+        b.lon = lon;
+        
+        if (viewer && viewer.entities) {
+            if (mapEntities[id]) {
+                viewer.entities.remove(mapEntities[id]);
+            }
+            mapEntities[id] = viewer.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(lon, lat),
+                point: {
+                    pixelSize: 12,
+                    color: Cesium.Color.LIMEGREEN,
+                    outlineColor: Cesium.Color.WHITE,
+                    outlineWidth: 2
+                },
+                label: {
+                    text: b.name,
+                    font: '12px Arial',
+                    fillColor: Cesium.Color.WHITE,
+                    pixelOffset: new Cesium.Cartesian2(0, 16),
+                    showBackground: true,
+                    backgroundColor: Cesium.Color.fromAlpha(Cesium.Color.BLACK, 0.7),
+                    backgroundPadding: new Cesium.Cartesian2(4, 2)
+                }
+            });
+        }
+    }
+
+    function placeTarget(id, lat, lon) {
+        const t = targets.find(x => x.id === id);
+        if (!t) return;
+        t.lat = lat;
+        t.lon = lon;
+        
+        if (viewer && viewer.entities) {
+            if (mapEntities[id]) {
+                viewer.entities.remove(mapEntities[id]);
+            }
+            mapEntities[id] = viewer.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(lon, lat),
+                point: {
+                    pixelSize: 12,
+                    color: Cesium.Color.RED,
+                    outlineColor: Cesium.Color.WHITE,
+                    outlineWidth: 2
+                },
+                label: {
+                    text: t.name,
+                    font: '12px Arial',
+                    fillColor: Cesium.Color.WHITE,
+                    pixelOffset: new Cesium.Cartesian2(0, 16),
+                    showBackground: true,
+                    backgroundColor: Cesium.Color.fromAlpha(Cesium.Color.BLACK, 0.7),
+                    backgroundPadding: new Cesium.Cartesian2(4, 2)
+                }
+            });
+        }
+    }
+
+    function calculateGeodesicDistance(lat1, lon1, lat2, lon2) {
+        if (viewer && viewer.scene) {
+            const start = Cesium.Cartographic.fromDegrees(lon1, lat1);
+            const end = Cesium.Cartographic.fromDegrees(lon2, lat2);
+            const geod = new Cesium.EllipsoidGeodesic(start, end);
+            return geod.surfaceDistance / 1000;
+        } else {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+    }
+
+    function recalculatePaths() {
+        if (viewer && viewer.entities) {
+            viewer.entities.values.slice().forEach(e => {
+                if (e.polyline) viewer.entities.remove(e);
+            });
+        }
+        paths = [];
+
+        bases.forEach(b => {
+            if (b.lat == null || b.lon == null) return;
+            targets.forEach(t => {
+                if (t.lat == null || t.lon == null) return;
+                const dist = calculateGeodesicDistance(b.lat, b.lon, t.lat, t.lon);
+                const within = dist <= ATTACK_DRONE_RANGE_KM;
+                paths.push({base_name: b.name, target_name: t.name, distance_km: dist, within_range: within});
+                
+                if (viewer && viewer.entities) {
+                    viewer.entities.add({
+                        polyline: {
+                            positions: Cesium.Cartesian3.fromDegreesArray([b.lon, b.lat, t.lon, t.lat]),
+                            width: 2,
+                            material: within ? Cesium.Color.LIMEGREEN : Cesium.Color.RED,
+                            clampToGround: true
+                        }
+                    });
+                }
+            });
+        });
+
+        updateStatus();
+        if (viewer) {
+            adjustMapView();
+            if (viewer.scene && viewer.scene.requestRender) viewer.scene.requestRender();
+        }
+    }
+
+    function updateStatus() {
+        const baseCountEl = document.getElementById('baseCount');
+        if (baseCountEl) baseCountEl.textContent = bases.filter(b => b.lat && b.lon).length;
+        
+        const targetCountEl = document.getElementById('targetCount');
+        if (targetCountEl) targetCountEl.textContent = targets.filter(t => t.lat && t.lon).length;
+        
+        const pathCountEl = document.getElementById('pathCount');
+        if (pathCountEl) pathCountEl.textContent = paths.length;
+        
+        const saveBtn = document.getElementById('saveBtn');
+        if (saveBtn) {
+            saveBtn.disabled = !(
+                bases.filter(b => b.lat && b.lon).length >= 1 &&
+                targets.filter(t => t.lat && t.lon).length >= 1 &&
+                paths.length > 0
+            );
+        }
+    }
+
+    function savePlacement() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const missionId = urlParams.get('mission_id') || MISSION_ID;
+        const forceType = FORCE_TYPE.trim().toLowerCase();
+        
+        if (!missionId) {
+            alert('Error: No mission ID found');
+            return;
+        }
+        
+        const placedBases = bases.filter(b => b.lat && b.lon);
+        const placedTargets = targets.filter(t => t.lat && t.lon);
+        
+        if (placedBases.length === 0 || placedTargets.length === 0) {
+            alert('Please place at least 1 base and 1 target');
+            return;
+        }
+        
+        const payload = {
+            mission_id: parseInt(missionId),
+            force_type: forceType,
+            scenario: currentScenario,
+            bases: placedBases.map(b => ({
+                name: b.name,
+                lat: parseFloat(b.lat),
+                lon: parseFloat(b.lon)
+            })),
+            targets: placedTargets.map(t => ({
+                name: t.name,
+                lat: parseFloat(t.lat),
+                lon: parseFloat(t.lon),
+                details: targetDetailsData[t.id] || {}
+            })),
+            paths: paths
+        };
+        
+        console.log('Saving payload:', JSON.stringify(payload, null, 2));
+        
+        fetch(`/config/api/step2/save-placement/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json().then(data => ({status: r.status, data: data})))
+        .then(({status, data}) => {
+            if (status === 200 && data.success) {
+                alert('Placement saved successfully!');
+                window.location.href = `/config/mission/${missionId}/force/${forceType}/step3/`;
+            } else {
+                alert('Error: ' + (data.error || data.message || 'Unknown error'));
+            }
+        })
+        .catch(e => {
+            console.error('Save error:', e);
+            alert('Error saving placement: ' + e.message);
+        });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function adjustMapView() {
+        if (!viewer || !viewer.entities) return;
+
+        const placed = [];
+        bases.forEach(b => { if (b.lat != null && b.lon != null) placed.push([b.lon, b.lat]); });
+        targets.forEach(t => { if (t.lat != null && t.lon != null) placed.push([t.lon, t.lat]); });
+
+        if (placed.length === 0) return;
+
+        const lons = placed.map(p => p[0]);
+        const lats = placed.map(p => p[1]);
+        const west = Math.min(...lons);
+        const east = Math.max(...lons);
+        const south = Math.min(...lats);
+        const north = Math.max(...lats);
+
+        const padDeg = 0.5;
+        try {
+            const rect = Cesium.Rectangle.fromDegrees(west - padDeg, south - padDeg, east + padDeg, north + padDeg);
+            viewer.camera.flyTo({
+                destination: rect,
+                duration: 1.2
+            });
+        } catch (err) {
+            console.warn('adjustMapView error', err);
+        }
+    }
+
+    let panelOpen = false;
+
+    function togglePanel() {
+        panelOpen = !panelOpen;
+        const panel = document.getElementById('controlPanel');
+        const toggle = document.getElementById('panelToggle');
+        
+        if (panelOpen) {
+            panel.classList.add('open');
+            toggle.classList.add('open');
+            toggle.textContent = '◀';
+        } else {
+            panel.classList.remove('open');
+            toggle.classList.remove('open');
+            toggle.textContent = '▶';
+        }
+    }
+
+    initScenarioFromServer();
+    setupMapClickHandlers();
+</script>
+{% endblock %}

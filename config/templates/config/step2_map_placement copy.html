@@ -1,0 +1,1207 @@
+{% extends 'config/base.html' %}
+{% load static %}
+
+{% block title %}TACTICAL MAP PLACEMENT // DRONE WARFARE COMMAND{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'Cesium/Build/CesiumUnminified/Widgets/widgets.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    :root {
+        --primary-accent: #00D9FF;
+        --primary-glow: rgba(0, 217, 255, 0.4);
+        --cyber-green: #00FF41;
+        --warning: #FFB700;
+        --success: #34C759;
+        --enemy: #FF3B30;
+        --neutral-text: #E8E8E8;
+        --secondary-text: #8A8A8E;
+        --dark-bg: #0B0E11;
+        --panel-bg: rgba(15, 20, 25, 0.20);
+        --t-olive: #4A5D4E;
+        --gold: #FFD700;
+        --army-dark: #080A0C;
+    }
+
+    body {
+        font-family: 'Rajdhani', sans-serif;
+        background: var(--dark-bg);
+        color: var(--neutral-text);
+    }
+
+    .placement-content {
+        position: relative;
+        z-index: 3;
+        padding: 100px 32px 80px;
+        min-height: calc(100vh - 150px);
+    }
+
+    .placement-header {
+        max-width: 1400px;
+        margin: 0 auto 30px;
+        text-align: center;
+    }
+
+    .placement-title {
+        font-family: 'Oxanium', sans-serif;
+        font-size: 36px;
+        color: #FFFFFF;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin-bottom: 8px;
+        font-weight: 800;
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.4), 0 0 20px rgba(255, 215, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.6);
+    }
+
+    .placement-title span {
+        color: #FFD700;
+        text-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.6);
+    }
+
+    .placement-subtitle {
+        font-family: 'Space Mono', monospace;
+        color: var(--t-olive);
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+
+    .placement-container {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 24px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .map-section {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .tactical-panel {
+        background: rgba(0, 0, 0, 0.35);
+        border: 1.5px solid var(--t-olive);
+        padding: 16px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 25px rgba(255, 215, 0, 0.15);
+        border-radius: 8px;
+    }
+
+    .map-frame {
+        height: calc(100vh - 160px);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #cesiumContainer {
+        width: 100%;
+        flex: 1;
+        background: #1a1a1a;
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        border-radius: 4px;
+        min-height: 60vh;
+    }
+
+    .map-search-bar {
+        display: flex;
+        gap: 8px;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 12px;
+        border: 1.5px solid var(--t-olive);
+        border-radius: 4px;
+        margin-bottom: 12px;
+        backdrop-filter: blur(8px);
+    }
+
+    .map-search-bar input {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.08);
+        color: #FFD700;
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        padding: 10px 12px;
+        border-radius: 4px;
+        font-family: 'Space Mono', monospace;
+        font-size: 12px;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+    }
+
+    .map-search-bar input::placeholder {
+        color: rgba(255, 215, 0, 0.5);
+    }
+
+    .map-search-bar input:focus {
+        background: rgba(255, 215, 0, 0.15);
+        border-color: #FFD700;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        outline: none;
+    }
+
+    .map-search-bar button {
+        background: transparent;
+        border: 1px solid var(--t-olive);
+        color: #FFD700;
+        padding: 8px 14px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        font-family: 'Oxanium', sans-serif;
+    }
+
+    .map-search-bar button:hover {
+        background: var(--t-olive);
+        border-color: #FFD700;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+
+    .coords-display {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-family: 'Space Mono', monospace;
+        color: #FFD700;
+        font-size: 11px;
+        letter-spacing: 1px;
+        z-index: 10;
+        backdrop-filter: blur(8px);
+    }
+
+    .pin-mode-indicator {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        background: rgba(255, 59, 48, 0.9);
+        border: 2px solid var(--enemy);
+        padding: 12px 16px;
+        border-radius: 4px;
+        font-family: 'Space Mono', monospace;
+        color: #FFFFFF;
+        font-size: 12px;
+        letter-spacing: 1px;
+        z-index: 10;
+        display: none;
+        animation: pulse 1.5s infinite;
+    }
+
+    .pin-mode-indicator.active {
+        display: block;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 0.9; }
+        50% { opacity: 1; }
+    }
+
+    .control-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: 900px;
+        overflow-y: auto;
+    }
+
+    .control-panel::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .control-panel::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 3px;
+    }
+
+    .control-panel::-webkit-scrollbar-thumb {
+        background: var(--t-olive);
+        border-radius: 3px;
+    }
+
+    .control-panel::-webkit-scrollbar-thumb:hover {
+        background: #FFD700;
+    }
+
+    .panel-section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .section-title {
+        font-family: 'Space Mono', monospace;
+        color: #FFD700;
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        border-bottom: 1px solid var(--t-olive);
+        padding-bottom: 8px;
+    }
+
+    .section-title.bases {
+        color: var(--cyber-green);
+    }
+
+    .section-title.targets {
+        color: var(--enemy);
+    }
+
+    .scenario-display {
+        background: rgba(255, 215, 0, 0.08);
+        border: 1.5px solid var(--t-olive);
+        padding: 12px;
+        border-radius: 4px;
+        font-family: 'Space Mono', monospace;
+        font-size: 12px;
+        letter-spacing: 1px;
+        color: #FFD700;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    .position-card {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        padding: 12px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .position-card:hover {
+        background: rgba(0, 0, 0, 0.5);
+        border-color: rgba(255, 215, 0, 0.4);
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .card-name {
+        font-family: 'Oxanium', sans-serif;
+        font-weight: 600;
+        color: var(--neutral-text);
+        font-size: 12px;
+        letter-spacing: 1px;
+    }
+
+    .card-actions {
+        display: flex;
+        gap: 6px;
+    }
+
+    .btn-small {
+        padding: 5px 10px;
+        border: 1px solid var(--t-olive);
+        background: rgba(255, 215, 0, 0.1);
+        color: #FFD700;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: bold;
+        transition: all 0.2s ease;
+        font-family: 'Oxanium', sans-serif;
+    }
+
+    .btn-small:hover {
+        background: rgba(255, 215, 0, 0.2);
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+    }
+
+    .btn-small:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-delete {
+        background: rgba(255, 59, 48, 0.1);
+        border-color: var(--enemy);
+        color: var(--enemy);
+    }
+
+    .btn-delete:hover {
+        background: rgba(255, 59, 48, 0.2);
+        box-shadow: 0 0 8px rgba(255, 59, 48, 0.3);
+    }
+
+    .card-coords {
+        font-family: 'Space Mono', monospace;
+        color: var(--secondary-text);
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        line-height: 1.4;
+    }
+
+    .status-box {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1.5px solid var(--t-olive);
+        padding: 16px;
+        border-radius: 4px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        font-family: 'Space Mono', monospace;
+        font-size: 11px;
+    }
+
+    .status-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .status-label {
+        color: var(--secondary-text);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .status-value {
+        color: #FFD700;
+        font-weight: 700;
+        font-size: 18px;
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn-add-more {
+        padding: 10px;
+        background: rgba(255, 215, 0, 0.08);
+        border: 1.5px dashed var(--t-olive);
+        color: #FFD700;
+        cursor: pointer;
+        border-radius: 4px;
+        font-family: 'Space Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+    }
+
+    .btn-add-more:hover {
+        background: rgba(255, 215, 0, 0.15);
+        border-color: #FFD700;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    }
+
+    .btn-launch {
+        width: 100%;
+        background: transparent;
+        border: 2px solid #FFD700;
+        color: #FFD700;
+        padding: 14px 16px;
+        font-family: 'Oxanium', sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s ease;
+        text-transform: uppercase;
+        border-radius: 4px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 215, 0, 0.2);
+    }
+
+    .btn-launch::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: #FFD700;
+        z-index: -1;
+        transition: left 0.4s ease;
+    }
+
+    .btn-launch:hover:not(:disabled) {
+        color: var(--army-dark);
+        border-color: #FFD700;
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-launch:hover:not(:disabled)::before {
+        left: 0;
+    }
+
+    .btn-launch:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    @media (max-width: 1024px) {
+        .placement-container {
+            grid-template-columns: 1fr;
+        }
+        .control-panel {
+            max-height: 400px;
+        }
+        .map-frame {
+            height: 500px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .placement-content {
+            padding: 90px 16px 60px;
+        }
+        .placement-title {
+            font-size: 24px;
+        }
+        .map-frame {
+            height: 400px;
+        }
+        .status-box {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="placement-content">
+    <div class="placement-header">
+        <div class="placement-title">TACT<span>ICAL_MAP</span></div>
+        <div class="placement-subtitle">[ POSITION DESIGNATION ]</div>
+    </div>
+
+    <div class="placement-container">
+        <div class="map-section">
+            <div class="tactical-panel map-frame">
+                <div class="map-search-bar">
+                    <input id="mapSearchInput" type="text" placeholder="Search coordinates (lat,lon)..." />
+                    <button onclick="searchMapLocation()"><i class="fas fa-search"></i></button>
+                </div>
+                <div id="cesiumContainer"></div>
+                <div class="pin-mode-indicator" id="pinModeIndicator">
+                    📍 CLICK ON MAP TO PLACE
+                </div>
+                <div class="coords-display">
+                    <div>LAT: <span id="mouseLat">--</span></div>
+                    <div>LON: <span id="mouseLng">--</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tactical-panel">
+            <div class="control-panel">
+                <div class="panel-section">
+                    <label class="section-title">[ SCENARIO ]</label>
+                    <div class="scenario-display" id="scenarioDisplay">
+                        Loading scenario...
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <div class="section-title bases">🛡️ OPERATIONAL BASES</div>
+                    <div id="basesContainer"></div>
+                    <button id="addBaseBtn" class="btn-add-more" onclick="addMoreBases()" style="display:none;">
+                        <i class="fas fa-plus"></i> ADD BASE
+                    </button>
+                </div>
+
+                <div class="panel-section">
+                    <div class="section-title targets">🎯 TARGET POSITIONS</div>
+                    <div id="targetsContainer"></div>
+                    <button id="addTargetBtn" class="btn-add-more" onclick="addMoreTargets()" style="display:none;">
+                        <i class="fas fa-plus"></i> ADD TARGET
+                    </button>
+                </div>
+
+                <div class="status-box">
+    <div class="status-item">
+        <div class="status-label">Bases</div>
+        <div class="status-value"><span id="baseCount">0</span></div>
+    </div>
+    <div class="status-item">
+        <div class="status-label">Targets</div>
+        <div class="status-value"><span id="targetCount">0</span></div>
+    </div>
+    <div class="status-item">
+        <div class="status-label">Paths</div>
+        <div class="status-value"><span id="pathCount">0</span></div>
+    </div>
+    
+</div>
+
+                <button class="btn-launch" onclick="savePlacement()" id="saveBtn" disabled>
+                    <i class="fas fa-check-circle"></i> CONFIRM PLACEMENT
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'Cesium/Build/CesiumUnminified/Cesium.js' %}"></script>
+<script>
+console.log('Page loaded');
+
+const ATTACK_DRONE_RANGE_KM = 150;
+const SCENARIO_MAPPING = {
+    'ONE_BASE_ONE_TARGET': '1-1',
+    'ONE_BASE_MULTIPLE_TARGETS': '1-M',
+    'MULTIPLE_BASES_ONE_TARGET': 'M-1',
+    'MULTIPLE_BASES_MULTIPLE_TARGETS': 'M-M'
+};
+
+const SCENARIO_RULES = {
+    '1-1': {bases: 1, targets: 1},
+    '1-M': {bases: 1, targets: -1},
+    'M-1': {bases: -1, targets: 1},
+    'M-M': {bases: -1, targets: -1}
+};
+
+const SCENARIO_FROM_SERVER = '{{ config.scenario }}';
+const MISSION_ID = '{{ mission.id }}';
+const FORCE_TYPE = '{{ force_type }}';
+
+let viewer;
+let bases = [];
+let targets = [];
+let paths = [];
+let mapEntities = {};
+let pinMode = null;
+let currentScenario = null;
+let handler = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded - Scenario:', SCENARIO_FROM_SERVER);
+    initScenarioFromServer();
+    initCesium();
+});
+
+function initScenarioFromServer() {
+    let scenarioKey = SCENARIO_FROM_SERVER.trim();
+    if (SCENARIO_MAPPING[scenarioKey]) {
+        scenarioKey = SCENARIO_MAPPING[scenarioKey];
+    }
+    scenarioKey = scenarioKey.replace(/\s*-\s*/g, '-');
+    currentScenario = scenarioKey;
+    console.log('Current scenario:', currentScenario);
+    
+    const displayText = {
+        '1-1': 'Single Base → Single Target',
+        '1-M': 'Single Base → Multiple Targets',
+        'M-1': 'Multiple Bases → Single Target',
+        'M-M': 'Multiple Bases → Multiple Targets'
+    };
+    
+    document.getElementById('scenarioDisplay').textContent = displayText[scenarioKey] || scenarioKey;
+    onScenarioSet(scenarioKey);
+}
+
+function onScenarioSet(scenario) {
+    const rules = SCENARIO_RULES[scenario] || {bases: 1, targets: 1};
+    console.log('Scenario rules:', rules);
+
+    bases = [];
+    targets = [];
+
+    if (rules.bases > 0) {
+        for (let i = 0; i < rules.bases; i++) {
+            bases.push({id: `base_${Date.now()}_${i}`, name: `Base ${i + 1}`, lat: null, lon: null});
+        }
+    }
+    if (rules.targets > 0) {
+        for (let i = 0; i < rules.targets; i++) {
+            targets.push({id: `target_${Date.now()}_${i}`, name: `Target ${i + 1}`, lat: null, lon: null});
+        }
+    }
+
+    document.getElementById('addBaseBtn').style.display = rules.bases < 0 ? 'block' : 'none';
+    document.getElementById('addTargetBtn').style.display = rules.targets < 0 ? 'block' : 'none';
+    renderCards();
+}
+
+function initCesium() {
+    console.log('Initializing Cesium...');
+    if (typeof Cesium === 'undefined') {
+        console.error('Cesium not loaded');
+        setTimeout(initCesium, 500);
+        return;
+    }
+    
+    try {
+        viewer = new Cesium.Viewer("cesiumContainer", {
+            timeline: false,
+            animation: false,
+            sceneModePicker: false,
+            baseLayerPicker: true,
+            geocoder: false,
+            navigationHelpButton: false,
+            infoBox: false,
+            fullscreenButton: true,
+            fullscreenElement: document.getElementById('cesiumContainer'),
+            homeButton: true
+        });
+
+        // enable depth testing against terrain (helps pickPosition accuracy)
+        if (viewer.scene && viewer.scene.globe) {
+            viewer.scene.globe.depthTestAgainstTerrain = true;
+            viewer.scene.globe.enableLighting = true;
+        }
+
+        if (!viewer.scene.pickPositionSupported) {
+            console.warn('Cesium: pickPosition not supported; using pickEllipsoid fallback.');
+        }
+
+        console.log('Cesium viewer created successfully (offline mode)');
+        setupMapClickHandlers();
+
+    } catch (e) {
+        console.error('Error initializing Cesium:', e);
+        console.log('Falling back to canvas-based map');
+        initCanvasMap();
+    }
+}
+
+function initCanvasMap() {
+    console.log('Initializing canvas-based map');
+    const container = document.getElementById('cesiumContainer');
+    const canvas = document.createElement('canvas');
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.display = 'block';
+    canvas.style.background = '#1a1a1a';
+    
+    container.innerHTML = '';
+    container.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d');
+    let zoom = 1;
+    let offsetX = canvas.width / 2;
+    let offsetY = canvas.height / 2;
+    
+    function drawMap() {
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.strokeStyle = '#333333';
+        ctx.lineWidth = 1;
+        const gridSize = 50 * zoom;
+        
+        for (let x = 0; x < canvas.width; x += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+        
+        for (let y = 0; y < canvas.height; y += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+        
+        Object.values(mapEntities).forEach(entity => {
+            if (entity.canvas) {
+                ctx.fillStyle = entity.color;
+                ctx.beginPath();
+                ctx.arc(entity.x, entity.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.fillStyle = '#FFD700';
+                ctx.font = '11px Space Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText(entity.label, entity.x, entity.y - 16);
+            }
+        });
+        
+        paths.forEach(path => {
+            if (path.canvas) {
+                ctx.strokeStyle = path.within_range ? '#00FF41' : '#FF3B30';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(path.x1, path.y1);
+                ctx.lineTo(path.x2, path.y2);
+                ctx.stroke();
+            }
+        });
+    }
+    
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const canvasX = e.clientX - rect.left;
+        const canvasY = e.clientY - rect.top;
+        const lat = 28.5 + (canvasY - offsetY) / (50 * zoom);
+        const lon = 77.5 + (canvasX - offsetX) / (50 * zoom);
+        document.getElementById('mouseLat').textContent = lat.toFixed(4);
+        document.getElementById('mouseLng').textContent = lon.toFixed(4);
+    });
+    
+    canvas.addEventListener('click', (e) => {
+        if (!pinMode) return;
+        const rect = canvas.getBoundingClientRect();
+        const canvasX = e.clientX - rect.left;
+        const canvasY = e.clientY - rect.top;
+        const lat = 28.5 + (canvasY - offsetY) / (50 * zoom);
+        const lon = 77.5 + (canvasX - offsetX) / (50 * zoom);
+        console.log('Placed at:', lat, lon);
+        
+        if (pinMode.type === 'base') {
+            placeBase(pinMode.id, lat, lon);
+        } else {
+            placeTarget(pinMode.id, lat, lon);
+        }
+        
+        pinMode = null;
+        updatePinIndicator();
+        renderCards();
+        recalculatePaths();
+    });
+    
+    drawMap();
+    window.canvasMapDraw = drawMap;
+}
+
+function setupMapClickHandlers() {
+    if (!viewer) {
+        console.error('Viewer not initialized');
+        return;
+    }
+    
+    handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+    
+    handler.setInputAction((movement) => {
+        const cartesian = viewer.camera.pickEllipsoid(movement.endPosition, viewer.scene.globe.ellipsoid);
+        if (cartesian) {
+            const carto = Cesium.Cartographic.fromCartesian(cartesian);
+            document.getElementById('mouseLat').textContent = Cesium.Math.toDegrees(carto.latitude).toFixed(4);
+            document.getElementById('mouseLng').textContent = Cesium.Math.toDegrees(carto.longitude).toFixed(4);
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+    
+    handler.setInputAction((movement) => {
+        if (!pinMode) {
+            console.log('Not in pin mode');
+            return;
+        }
+        
+        const cartesian = viewer.scene.pickPosition(movement.position) || viewer.camera.pickEllipsoid(movement.position, viewer.scene.globe.ellipsoid);
+        if (!cartesian) {
+            console.log('Could not pick position');
+            return;
+        }
+        
+        const carto = Cesium.Cartographic.fromCartesian(cartesian);
+        const lat = Cesium.Math.toDegrees(carto.latitude);
+        const lon = Cesium.Math.toDegrees(carto.longitude);
+        
+        console.log('Placed position at:', lat, lon);
+        
+        if (pinMode.type === 'base') {
+            placeBase(pinMode.id, lat, lon);
+        } else {
+            placeTarget(pinMode.id, lat, lon);
+        }
+        
+        pinMode = null;
+        updatePinIndicator();
+        renderCards();
+        recalculatePaths();
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+}
+
+function updatePinIndicator() {
+    const indicator = document.getElementById('pinModeIndicator');
+    if (pinMode) {
+        indicator.classList.add('active');
+    } else {
+        indicator.classList.remove('active');
+    }
+}
+
+function renderCards() {
+    renderBaseCards();
+    renderTargetCards();
+    updateStatus();
+}
+
+function renderBaseCards() {
+    const container = document.getElementById('basesContainer');
+    container.innerHTML = '';
+    bases.forEach(b => {
+        const div = document.createElement('div');
+        div.className = 'position-card';
+        div.innerHTML = `
+            <div class="card-header">
+                <div class="card-name">${b.name}</div>
+                <div class="card-actions">
+                    <button class="btn-small" onclick="startPin('base','${b.id}')" ${b.lat ? 'disabled' : ''}>
+                        ${b.lat ? '✓ PLACED' : 'PIN'}
+                    </button>
+                    <button class="btn-small btn-delete" onclick="deleteBase('${b.id}')">✕</button>
+                </div>
+            </div>
+            <div class="card-coords">
+                LAT: ${b.lat ? b.lat.toFixed(4) : '—'} | LON: ${b.lon ? b.lon.toFixed(4) : '—'}
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function renderTargetCards() {
+    const container = document.getElementById('targetsContainer');
+    container.innerHTML = '';
+    targets.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'position-card';
+        div.innerHTML = `
+            <div class="card-header">
+                <div class="card-name">${t.name}</div>
+                <div class="card-actions">
+                    <button class="btn-small" onclick="startPin('target','${t.id}')" ${t.lat ? 'disabled' : ''}>
+                        ${t.lat ? '✓ PLACED' : 'PIN'}
+                    </button>
+                    <button class="btn-small btn-delete" onclick="deleteTarget('${t.id}')">✕</button>
+                </div>
+            </div>
+            <div class="card-coords">
+                LAT: ${t.lat ? t.lat.toFixed(4) : '—'} | LON: ${t.lon ? t.lon.toFixed(4) : '—'}
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function addMoreBases() {
+    bases.push({id: `base_${Date.now()}`, name: `Base ${bases.length + 1}`, lat: null, lon: null});
+    renderCards();
+}
+
+function addMoreTargets() {
+    targets.push({id: `target_${Date.now()}`, name: `Target ${targets.length + 1}`, lat: null, lon: null});
+    renderCards();
+}
+
+function deleteBase(id) {
+    const idx = bases.findIndex(b => b.id === id);
+    if (idx >= 0) {
+        delete mapEntities[id];
+        bases.splice(idx, 1);
+        renderCards();
+        recalculatePaths();
+        if (window.canvasMapDraw) window.canvasMapDraw();
+    }
+}
+
+function deleteTarget(id) {
+    const idx = targets.findIndex(t => t.id === id);
+    if (idx >= 0) {
+        delete mapEntities[id];
+        targets.splice(idx, 1);
+        renderCards();
+        recalculatePaths();
+        if (window.canvasMapDraw) window.canvasMapDraw();
+    }
+}
+
+function startPin(type, id) {
+    pinMode = {type, id};
+    updatePinIndicator();
+    console.log('Pin mode activated for', type, id);
+}
+
+function placeBase(id, lat, lon) {
+    const b = bases.find(x => x.id === id);
+    if (!b) return;
+    b.lat = lat;
+    b.lon = lon;
+    
+    if (viewer && viewer.entities) {
+        if (mapEntities[id]) {
+            viewer.entities.remove(mapEntities[id]);
+        }
+        mapEntities[id] = viewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(lon, lat),
+            point: {
+                pixelSize: 12,
+                color: Cesium.Color.LIMEGREEN,
+                outlineColor: Cesium.Color.WHITE,
+                outlineWidth: 2
+            },
+            label: {
+                text: b.name,
+                font: '12px Arial',
+                fillColor: Cesium.Color.WHITE,
+                pixelOffset: new Cesium.Cartesian2(0, 16),
+                showBackground: true,
+                backgroundColor: Cesium.Color.fromAlpha(Cesium.Color.BLACK, 0.7),
+                backgroundPadding: new Cesium.Cartesian2(4, 2)
+            }
+        });
+    } else {
+        mapEntities[id] = {
+            canvas: true,
+            color: '#00FF41',
+            x: 400,
+            y: 300,
+            label: b.name
+        };
+        if (window.canvasMapDraw) window.canvasMapDraw();
+    }
+}
+
+function placeTarget(id, lat, lon) {
+    const t = targets.find(x => x.id === id);
+    if (!t) return;
+    t.lat = lat;
+    t.lon = lon;
+    
+    if (viewer && viewer.entities) {
+        if (mapEntities[id]) {
+            viewer.entities.remove(mapEntities[id]);
+        }
+        mapEntities[id] = viewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(lon, lat),
+            point: {
+                pixelSize: 12,
+                color: Cesium.Color.RED,
+                outlineColor: Cesium.Color.WHITE,
+                outlineWidth: 2
+            },
+            label: {
+                text: t.name,
+                font: '12px Arial',
+                fillColor: Cesium.Color.WHITE,
+                pixelOffset: new Cesium.Cartesian2(0, 16),
+                showBackground: true,
+                backgroundColor: Cesium.Color.fromAlpha(Cesium.Color.BLACK, 0.7),
+                backgroundPadding: new Cesium.Cartesian2(4, 2)
+            }
+        });
+    } else {
+        mapEntities[id] = {
+            canvas: true,
+            color: '#FF3B30',
+            x: 500,
+            y: 350,
+            label: t.name
+        };
+        if (window.canvasMapDraw) window.canvasMapDraw();
+    }
+}
+
+function calculateGeodesicDistance(lat1, lon1, lat2, lon2) {
+    if (viewer && viewer.scene) {
+        const start = Cesium.Cartographic.fromDegrees(lon1, lat1);
+        const end = Cesium.Cartographic.fromDegrees(lon2, lat2);
+        const geod = new Cesium.EllipsoidGeodesic(start, end);
+        return geod.surfaceDistance / 1000;
+    } else {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + 
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+}
+
+function recalculatePaths() {
+    if (viewer && viewer.entities) {
+        viewer.entities.values.slice().forEach(e => {
+            if (e.polyline) viewer.entities.remove(e);
+        });
+    }
+    paths = [];
+
+    bases.forEach(b => {
+        if (b.lat == null || b.lon == null) return;
+        targets.forEach(t => {
+            if (t.lat == null || t.lon == null) return;
+            const dist = calculateGeodesicDistance(b.lat, b.lon, t.lat, t.lon);
+            const within = dist <= ATTACK_DRONE_RANGE_KM;
+            paths.push({base_name: b.name, target_name: t.name, distance_km: dist, within_range: within});
+            
+            if (viewer && viewer.entities) {
+                viewer.entities.add({
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArray([b.lon, b.lat, t.lon, t.lat]),
+                        width: 2,
+                        material: within ? Cesium.Color.LIMEGREEN : Cesium.Color.RED,
+                        clampToGround: true
+                    }
+                });
+            }
+        });
+    });
+
+    updateStatus();
+    if (window.canvasMapDraw) window.canvasMapDraw();
+    if (viewer) {
+        adjustMapView();
+        // request render to ensure fresh frame
+        if (viewer.scene && viewer.scene.requestRender) viewer.scene.requestRender();
+    }
+}
+
+function updateStatus() {
+    document.getElementById('baseCount').textContent = bases.filter(b => b.lat && b.lon).length;
+    document.getElementById('targetCount').textContent = targets.filter(t => t.lat && t.lon).length;
+    document.getElementById('pathCount').textContent = paths.length;
+    document.getElementById('saveBtn').disabled = !(
+        bases.filter(b => b.lat && b.lon).length >= 1 &&
+        targets.filter(t => t.lat && t.lon).length >= 1 &&
+        paths.length > 0
+    );
+}
+function savePlacement() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const missionId = urlParams.get('mission_id') || MISSION_ID;
+    const forceType = FORCE_TYPE.trim().toLowerCase();
+    
+    if (!missionId) {
+        alert('Error: No mission ID found');
+        return;
+    }
+    
+    if (!forceType) {
+        alert('Error: No force type found');
+        return;
+    }
+    
+    const placedBases = bases.filter(b => b.lat && b.lon);
+    const placedTargets = targets.filter(t => t.lat && t.lon);
+    
+    if (placedBases.length === 0 || placedTargets.length === 0) {
+        alert('Please place at least 1 base and 1 target');
+        return;
+    }
+    
+    const payload = {
+        mission_id: parseInt(missionId),
+        force_type: forceType,
+        scenario: currentScenario,
+        bases: placedBases.map(b => ({
+            name: b.name,
+            lat: parseFloat(b.lat),
+            lon: parseFloat(b.lon)
+        })),
+        targets: placedTargets.map(t => ({
+            name: t.name,
+            lat: parseFloat(t.lat),
+            lon: parseFloat(t.lon)
+        })),
+        paths: paths
+    };
+    
+    console.log('Saving payload:', JSON.stringify(payload, null, 2));
+    console.log('Mission ID:', missionId);
+    console.log('Force Type:', forceType);
+    
+    fetch(`/config/api/step2/save-placement/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(r => {
+        console.log('Response status:', r.status);
+        return r.json().then(data => ({status: r.status, data: data}));
+    })
+    .then(({status, data}) => {
+        console.log('Response data:', data);
+        if (status === 200 && data.success) {
+            alert('Placement saved successfully!');
+            window.location.href = `/config/mission/${missionId}/force/${forceType}/step3/`;
+        } else {
+            alert('Error: ' + (data.error || data.message || 'Unknown error'));
+            console.error('Full error response:', data);
+        }
+    })
+    .catch(e => {
+        console.error('Save error:', e);
+        alert('Error saving placement: ' + e.message);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function searchMapLocation() {
+    const q = document.getElementById('mapSearchInput').value;
+    if (!q) return;
+    const coordMatch = q.trim().match(/^\s*([-+]?\d+(?:\.\d+)?)\s*,\s*([-+]?\d+(?:\.\d+)?)\s*$/);
+    if (coordMatch) {
+        const lat = parseFloat(coordMatch[1]);
+        const lon = parseFloat(coordMatch[2]);
+        document.getElementById('mouseLat').textContent = lat.toFixed(4);
+        document.getElementById('mouseLng').textContent = lon.toFixed(4);
+        return;
+    }
+    alert('Enter coordinates as "lat,lon" (e.g. 28.5,77.5)');
+}
+
+function adjustMapView() {
+    if (!viewer || !viewer.entities) return;
+
+    const placed = [];
+    bases.forEach(b => { if (b.lat != null && b.lon != null) placed.push([b.lon, b.lat]); });
+    targets.forEach(t => { if (t.lat != null && t.lon != null) placed.push([t.lon, t.lat]); });
+
+    if (placed.length === 0) return;
+
+    const lons = placed.map(p => p[0]);
+    const lats = placed.map(p => p[1]);
+    const west = Math.min(...lons);
+    const east = Math.max(...lons);
+    const south = Math.min(...lats);
+    const north = Math.max(...lats);
+
+    // small padding
+    const padDeg = 0.5;
+    try {
+        const rect = Cesium.Rectangle.fromDegrees(west - padDeg, south - padDeg, east + padDeg, north + padDeg);
+        viewer.camera.flyTo({
+            destination: rect,
+            duration: 1.2
+        });
+    } catch (err) {
+        console.warn('adjustMapView error', err);
+    }
+}
+</script>
+{% endblock %}

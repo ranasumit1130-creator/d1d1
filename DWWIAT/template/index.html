@@ -1,0 +1,176 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DWWIAT - Command Center</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;700;800&family=Rajdhani:wght@300;600;700&family=Space+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    :root {
+      --p-cyan: #00F2FF;
+      --action-orange: #FF8C00;
+      --army-dark: #06080A;
+      --panel-glow: rgba(0, 242, 255, 0.15);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; cursor: crosshair; }
+
+    body, html {
+      height: 100%; width: 100%; overflow: hidden;
+      background-color: var(--army-dark);
+      font-family: 'Rajdhani', sans-serif;
+      color: #FFF;
+    }
+
+    /* Background Elements */
+    .vid-bg {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; z-index: 0; opacity: 0.5; filter: brightness(0.7);
+    }
+
+    .hud-vignette {
+      position: fixed; inset: 0; z-index: 5;
+      background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.9) 100%);
+      pointer-events: none;
+    }
+
+    /* Top Navigation */
+    header {
+      position: absolute; top: 0; width: 100%; z-index: 100;
+      padding: 30px 60px; display: flex; justify-content: space-between;
+      align-items: center; background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+    }
+
+    .brand { display: flex; align-items: center; gap: 20px; }
+    .brand img { height: 70px; filter: drop-shadow(0 0 10px var(--p-cyan)); }
+    
+    .brand-text h2 { 
+        font-family: 'Oxanium'; font-size: 32px; font-weight: 800; 
+        letter-spacing: 4px; color: var(--p-cyan); margin: 0;
+    }
+
+    .nav-btns { display: flex; gap: 20px; }
+    .btn-tactical {
+      text-decoration: none; font-family: 'Oxanium';
+      color: #FFF; font-size: 12px; letter-spacing: 2px;
+      padding: 12px 25px; border: 1px solid rgba(0, 242, 255, 0.3);
+      background: rgba(0,0,0,0.5); text-transform: uppercase; transition: 0.3s;
+    }
+    .btn-tactical:hover { border-color: var(--p-cyan); background: var(--p-cyan); color: #000; }
+
+    /* Central Content */
+    .hero {
+      height: 100vh; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; z-index: 50; position: relative;
+    }
+
+    .title-group { text-align: center; }
+
+    .title-group h1 {
+      font-family: 'Oxanium'; font-size: clamp(3rem, 10vw, 7rem);
+      font-weight: 800; text-transform: uppercase; line-height: 0.85;
+      color: #FFF; margin-bottom: 10px;
+    }
+
+    /* Increased size & visibility for sub-title */
+    .full-name {
+      font-family: 'Oxanium';
+      font-size: clamp(1.2rem, 2.5vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: 8px;
+      color: var(--p-cyan);
+      text-transform: uppercase;
+      text-shadow: 0 0 20px var(--panel-glow);
+      border-top: 2px solid var(--p-cyan);
+      border-bottom: 2px solid var(--p-cyan);
+      padding: 15px 40px;
+      display: inline-block;
+      margin-top: 10px;
+      background: rgba(0, 242, 255, 0.05);
+    }
+
+    /* Bottom Tactical Launch Zone */
+    .launch-zone {
+      position: absolute; bottom: 0; width: 100%; height: 200px;
+      z-index: 100; display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      background: linear-gradient(0deg, rgba(0, 242, 255, 0.1) 0%, transparent 100%);
+    }
+
+    .launch-btn {
+      background: #000; border: 2px solid var(--action-orange);
+      color: var(--action-orange); padding: 25px 100px;
+      font-family: 'Oxanium'; font-size: 28px; font-weight: 800;
+      letter-spacing: 10px; cursor: pointer; text-transform: uppercase;
+      transition: all 0.4s ease;
+      box-shadow: 0 0 20px rgba(255, 140, 0, 0.2);
+    }
+
+    .launch-btn:hover {
+      background: var(--action-orange); color: #000;
+      box-shadow: 0 0 60px rgba(255, 140, 0, 0.5);
+      transform: scale(1.05) translateY(-5px);
+    }
+
+    .launch-btn i { font-size: 22px; margin-left: 20px; }
+
+    /* Corner Accent */
+    .corner-tag {
+        position: absolute; bottom: 20px; left: 40px;
+        font-family: 'Space Mono'; font-size: 10px; color: #444;
+        letter-spacing: 2px;
+    }
+
+  </style>
+</head>
+<body>
+
+    <video autoplay muted loop playsinline class="vid-bg">
+        <source src="{% static 'videos/mission_bg2.mp4' %}" type="video/mp4">
+    </video>
+
+    <div class="hud-vignette"></div>
+
+    <header>
+        <div class="brand">
+            <img src="{% static 'images/Wardec-Logo.png' %}" alt="DWWIAT">
+            <div class="brand-text">
+                <h2>DWWIAT</h2>
+            </div>
+        </div>
+          <div class="nav-btns">
+            <a href="/about/" class="btn-tactical">About System</a>
+            <a href="{% url 'asset_dashboard' %}" class="btn-tactical">Assets</a>
+          <a href="{% url 'authentication:config' %}" class="btn-tactical">Auth</a>
+
+        </div>
+    </header>
+
+    <main class="hero">
+        <div class="title-group">
+            <h1>DRONE WARFARE</h1>
+            <div class="full-name">
+                Wargame & Impact Analysis Tool
+            </div>
+        </div>
+    </main>
+
+    <div class="launch-zone">
+        <button class="launch-btn" onclick="window.location.href='/config/mission/create/'">
+            START MISSION <i class="fas fa-angles-right"></i>
+        </button>
+        <div style="margin-top: 20px; color: #666; font-family: 'Space Mono'; font-size: 10px; letter-spacing: 4px;">
+            SECURE TERMINAL // INDIAN ARMY COMMAND ACCESS
+        </div>
+    </div>
+
+    <div class="corner-tag">
+        V.2.0.4 // ENCRYPTION ACTIVE
+    </div>
+
+</body>
+</html>

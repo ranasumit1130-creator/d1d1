@@ -1,0 +1,375 @@
+{% extends 'config/base.html' %}
+
+{% block title %}Operator Login - DWWIAT{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Space+Mono&display=swap');
+
+    :root {
+        --primary-gold: #FFD700;
+        --accent-gold: rgba(255, 215, 0, 0.6);
+        --error-red: #FF3B30;
+        --terminal-bg: #05070a;
+        --border-glow: rgba(255, 215, 0, 0.1);
+    }
+
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        background-color: var(--terminal-bg);
+        background-image: 
+            radial-gradient(circle at center, rgba(255, 215, 0, 0.05) 0%, transparent 70%),
+            url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+        font-family: 'Rajdhani', sans-serif;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Main Content Wrapper */
+    #main-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    /* Animated Grid Overlay */
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: 
+            linear-gradient(var(--border-glow) 1px, transparent 1px),
+            linear-gradient(90deg, var(--border-glow) 1px, transparent 1px);
+        background-size: 50px 50px;
+        mask-image: radial-gradient(ellipse at center, black, transparent 80%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .login-frame {
+        position: relative;
+        width: 100%;
+        max-width: 700px;
+        padding: 70px 60px;
+        background: rgba(10, 12, 15, 0.85);
+        border: 2px solid rgba(255, 215, 0, 0.25);
+        box-shadow: 
+            0 0 60px rgba(255, 215, 0, 0.1),
+            0 0 100px rgba(0, 0, 0, 0.9),
+            inset 0 0 30px rgba(255, 215, 0, 0.03);
+        backdrop-filter: blur(15px);
+        z-index: 1;
+        transition: all 0.4s ease;
+    }
+
+    .login-frame:hover {
+        border-color: rgba(255, 215, 0, 0.35);
+        box-shadow: 
+            0 0 80px rgba(255, 215, 0, 0.15),
+            0 0 120px rgba(0, 0, 0, 0.95),
+            inset 0 0 40px rgba(255, 215, 0, 0.05);
+    }
+
+    /* Enhanced Tactical Corners */
+    .login-frame::before, .login-frame::after {
+        content: "";
+        position: absolute;
+        width: 40px; height: 40px;
+        border: 3px solid var(--primary-gold);
+        filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
+        transition: all 0.3s ease;
+    }
+    
+    .login-frame::before { 
+        top: -8px; 
+        left: -8px; 
+        border-right: 0; 
+        border-bottom: 0; 
+    }
+    
+    .login-frame::after { 
+        bottom: -8px; 
+        right: -8px; 
+        border-left: 0; 
+        border-top: 0; 
+    }
+
+    .login-frame:hover::before,
+    .login-frame:hover::after {
+        filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8));
+    }
+
+    /* Additional Corner Elements */
+    .login-frame {
+        --corner-size: 40px;
+    }
+
+    .corner-top-right {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: var(--corner-size);
+        height: var(--corner-size);
+        border: 3px solid var(--primary-gold);
+        border-left: 0;
+        border-bottom: 0;
+        filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
+        display: none;
+    }
+
+    .corner-bottom-left {
+        position: absolute;
+        bottom: -8px;
+        left: -8px;
+        width: var(--corner-size);
+        height: var(--corner-size);
+        border: 3px solid var(--primary-gold);
+        border-right: 0;
+        border-top: 0;
+        filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
+        display: none;
+    }
+
+    .header-tag {
+        font-family: 'Space Mono', monospace;
+        color: var(--primary-gold);
+        font-size: 12px;
+        letter-spacing: 5px;
+        text-align: center;
+        display: block;
+        margin-bottom: 8px;
+        opacity: 0.85;
+        text-transform: uppercase;
+    }
+
+    .glitch-title {
+        color: white;
+        text-transform: uppercase;
+        font-weight: 800;
+        text-align: center;
+        letter-spacing: 4px;
+        margin-bottom: 40px;
+        margin-top: 10px;
+        position: relative;
+        font-size: 28px;
+        text-shadow: 3px 0 var(--error-red), -3px 0 #00ffff;
+        animation: glitch 3s infinite linear alternate-reverse;
+    }
+
+    .form-group-wrapper {
+        margin-bottom: 22px;
+    }
+
+    .form-label-tactical {
+        font-family: 'Space Mono', monospace;
+        color: var(--primary-gold);
+        font-size: 11px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 8px;
+        opacity: 0.9;
+    }
+
+    .form-control-tactical {
+        background: rgba(255, 255, 255, 0.02) !important;
+        border: 1px solid rgba(255, 215, 0, 0.2) !important;
+        border-left: 4px solid var(--primary-gold) !important;
+        border-radius: 2px !important;
+        color: white !important;
+        padding: 16px 14px;
+        font-size: 14px;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        font-family: 'Space Mono', monospace;
+    }
+
+    .form-control-tactical::placeholder {
+        color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    .form-control-tactical:focus {
+        background: rgba(255, 215, 0, 0.08) !important;
+        border-color: var(--primary-gold) !important;
+        border-left-color: var(--primary-gold) !important;
+        box-shadow: 
+            inset 0 0 10px rgba(255, 215, 0, 0.05),
+            0 0 20px rgba(255, 215, 0, 0.1) !important;
+        transform: translateX(3px);
+    }
+
+    .btn-access {
+        background: transparent;
+        border: 2px solid var(--primary-gold);
+        color: var(--primary-gold);
+        width: 100%;
+        padding: 18px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        font-size: 13px;
+        font-family: 'Space Mono', monospace;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        position: relative;
+        margin-top: 30px;
+        cursor: pointer;
+    }
+
+    .btn-access:hover {
+        background: rgba(255, 215, 0, 0.1);
+        color: var(--primary-gold);
+        box-shadow: 
+            0 0 25px rgba(255, 215, 0, 0.4),
+            inset 0 0 20px rgba(255, 215, 0, 0.08);
+        border-color: var(--primary-gold);
+    }
+
+    .btn-access:active {
+        background: rgba(255, 215, 0, 0.2);
+    }
+
+    .btn-access::after {
+        content: "";
+        position: absolute;
+        top: -50%; 
+        left: -60%;
+        width: 20%; 
+        height: 200%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: rotate(30deg);
+        transition: all 0.5s;
+    }
+
+    .btn-access:hover::after {
+        left: 120%;
+    }
+
+    .forgot-link {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .forgot-link a {
+        color: var(--accent-gold) !important;
+        text-decoration: none !important;
+        font-family: 'Space Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+        border-bottom: 1px solid transparent;
+    }
+
+    .forgot-link a:hover {
+        color: var(--primary-gold) !important;
+        border-bottom-color: var(--primary-gold);
+    }
+
+    /* Animations */
+    @keyframes glitch {
+        0% { text-shadow: 3px 0 var(--error-red), -3px 0 #00ffff; }
+        2% { text-shadow: 6px 0 var(--error-red), -6px 0 #00ffff; }
+        4% { text-shadow: 3px 0 var(--error-red), -3px 0 #00ffff; }
+        100% { text-shadow: 1px 0 var(--error-red), -1px 0 #00ffff; }
+    }
+
+    .system-status {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        border-left: 3px solid var(--primary-gold);
+        padding-left: 15px;
+        font-family: 'Space Mono', monospace;
+        font-size: 11px;
+        line-height: 1.8;
+        color: var(--accent-gold);
+        z-index: 10;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .system-status span {
+        display: block;
+        color: var(--primary-gold);
+        opacity: 0.9;
+    }
+
+    /* Ambient Scanline */
+    .scan-line {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            to bottom,
+            transparent 50%,
+            rgba(255, 215, 0, 0.02) 50%
+        );
+        background-size: 100% 4px;
+        pointer-events: none;
+        border-radius: 2px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .login-frame {
+            max-width: 100%;
+            padding: 40px 30px;
+        }
+
+        .glitch-title {
+            font-size: 22px;
+        }
+
+        .btn-access {
+            padding: 15px;
+            font-size: 12px;
+            letter-spacing: 2px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="main-content">
+    <div class="login-frame">
+        <div class="scan-line"></div>
+        
+        <span class="header-tag">⚡ NETWORK AUTHENTICATION ⚡</span>
+        <h3 class="glitch-title">COMMAND LOG-IN</h3>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group-wrapper">
+                <label class="form-label-tactical">OPERATOR_ID</label>
+                <input type="text" name="username" class="form-control form-control-tactical" required placeholder="ENTER USERNAME">
+            </div>
+
+            <div class="form-group-wrapper">
+                <label class="form-label-tactical">SECURE_CREDENTIAL</label>
+                <input type="password" name="password" class="form-control form-control-tactical" required placeholder="••••••••">
+            </div>
+
+            <button type="submit" class="btn-access">
+                ▶ INITIALIZE ACCESS
+            </button>
+
+            <div class="forgot-link">
+                <a href="#">FORGOT ACCESS CODES?</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="system-status">
+    <span>SYS_ID: DWWIAT-88</span>
+    <span>ENC_MODE: RSA-4096</span>
+    <span>STATUS: READY_FOR_UPLINK</span>
+</div>
+{% endblock %}

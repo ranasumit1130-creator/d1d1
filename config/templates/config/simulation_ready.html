@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMULATION READY :: MISSION {{ mission.id }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --hud-bg: rgba(5, 10, 15, 0.95);
+            --hud-border: rgba(0, 210, 255, 0.3);
+            --hud-accent: #00d2ff;
+            --hud-text: #e0f7ff;
+            --blue-force: #0066ff;
+            --red-force: #ff3333;
+            --glass-blur: blur(8px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'Rajdhani', sans-serif;
+            background: linear-gradient(135deg, #0a0f1a 0%, #1a2633 100%);
+            color: var(--hud-text);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid var(--hud-accent);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 32px;
+            color: var(--hud-accent);
+            text-shadow: 0 0 20px rgba(0, 210, 255, 0.5);
+            margin-bottom: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .mission-info {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .forces-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .force-card {
+            background: var(--hud-bg);
+            border: 2px solid;
+            border-radius: 5px;
+            padding: 25px;
+            backdrop-filter: var(--glass-blur);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+
+        .force-card.blue {
+            border-color: var(--blue-force);
+            box-shadow: 0 0 30px rgba(0, 102, 255, 0.2);
+        }
+
+        .force-card.red {
+            border-color: var(--red-force);
+            box-shadow: 0 0 30px rgba(255, 51, 51, 0.2);
+        }
+
+        .force-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+        }
+
+        .force-card h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .force-card.blue h2 {
+            color: var(--blue-force);
+        }
+
+        .force-card.red h2 {
+            color: var(--red-force);
+        }
+
+        .config-section {
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.03);
+            padding: 15px;
+            border-left: 3px solid;
+            border-radius: 3px;
+        }
+
+        .force-card.blue .config-section {
+            border-left-color: var(--blue-force);
+        }
+
+        .force-card.red .config-section {
+            border-left-color: var(--red-force);
+        }
+
+        .config-section h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .config-list {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .config-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+        }
+
+        .config-item:last-child {
+            border-bottom: none;
+        }
+
+        .config-label {
+            color: rgba(255,255,255,0.6);
+        }
+
+        .config-value {
+            font-weight: bold;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .force-card.blue .config-value {
+            color: var(--blue-force);
+        }
+
+        .force-card.red .config-value {
+            color: var(--red-force);
+        }
+
+        .view-config-btn {
+            display: inline-block;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid currentColor;
+            color: inherit;
+            padding: 8px 15px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .view-config-btn:hover {
+            background: currentColor;
+            color: #000;
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .force-card.blue .view-config-btn {
+            color: var(--blue-force);
+        }
+
+        .force-card.red .view-config-btn {
+            color: var(--red-force);
+        }
+
+        .action-section {
+            background: var(--hud-bg);
+            border: 2px solid var(--hud-accent);
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            backdrop-filter: var(--glass-blur);
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.1);
+        }
+
+        .action-section h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--hud-accent);
+            margin-bottom: 20px;
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            padding: 15px 40px;
+            border: 2px solid;
+            background: rgba(0,0,0,0.3);
+            cursor: pointer;
+            font-size: 14px;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            color: var(--hud-accent);
+            border-color: var(--hud-accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--hud-accent);
+            color: #000;
+            box-shadow: 0 0 20px var(--hud-accent);
+            transform: scale(1.05);
+        }
+
+        .btn-secondary {
+            color: rgba(255,255,255,0.6);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        .btn-secondary:hover {
+            color: rgba(255,255,255,1);
+            border-color: rgba(255,255,255,0.6);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--hud-bg);
+            border: 2px solid var(--hud-accent);
+            border-radius: 5px;
+            padding: 40px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 0 50px rgba(0, 210, 255, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--hud-border);
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            color: var(--hud-accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--hud-accent);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .config-detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+        }
+
+        .config-detail-table td {
+            padding: 10px;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+        }
+
+        .config-detail-table td:first-child {
+            width: 30%;
+            color: rgba(255,255,255,0.6);
+            text-transform: uppercase;
+        }
+
+        .config-detail-table td:last-child {
+            color: var(--hud-accent);
+            font-weight: bold;
+        }
+
+        .config-detail-table tr:hover td {
+            background: rgba(0, 210, 255, 0.05);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-left: 3px solid var(--hud-accent);
+            text-align: center;
+            border-radius: 3px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--hud-accent);
+        }
+
+        .readiness-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--hud-accent);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .readiness-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00aa00, #00ff00);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            color: #000;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        @media (max-width: 768px) {
+            .forces-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-check-circle"></i> MISSION READY FOR DEPLOYMENT</h1>
+            <div class="mission-info">
+                MISSION ID: {{ mission.id }} | NAME: {{ mission.name }} | STATUS: CONFIGURATION COMPLETE
+            </div>
+        </header>
+
+        <div class="forces-grid">
+            <!-- BLUE FORCE CARD -->
+            <div class="force-card blue">
+                <h2><i class="fas fa-chevron-right"></i> BLUE FORCE (ATTACKER)</h2>
+                
+                <div class="config-section">
+                    <h3>📍 LAUNCH BASES</h3>
+                    <div class="config-list" id="blue-bases">
+                        <div class="config-item">
+                            <span class="config-label">Total Bases:</span>
+                            <span class="config-value">{{ blue_config.config_data.bases|length }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h3>🚁 DRONE SWARM</h3>
+                    <div class="config-list" id="blue-drones">
+                        <div class="config-item">
+                            <span class="config-label">Total Units:</span>
+                            <span class="config-value" id="blue-total-drones">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="view-config-btn" onclick="showForceDetail('blue')">
+                    <i class="fas fa-eye"></i> VIEW FULL CONFIG
+                </button>
+            </div>
+
+            <!-- RED FORCE CARD -->
+            <div class="force-card red">
+                <h2><i class="fas fa-shield-alt"></i> RED FORCE (DEFENDER)</h2>
+                
+                <div class="config-section">
+                    <h3>🎯 TARGET LOCATIONS</h3>
+                    <div class="config-list" id="red-targets">
+                        <div class="config-item">
+                            <span class="config-label">Total Targets:</span>
+                            <span class="config-value">{{ red_config.config_data.targets|length }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h3>🛡️ ADS SYSTEMS</h3>
+                    <div class="config-list" id="red-ads">
+                        <div class="config-item">
+                            <span class="config-label">Active Systems:</span>
+                            <span class="config-value" id="red-total-ads">{{ red_config.config_data.ads|length }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="view-config-btn" onclick="showForceDetail('red')">
+                    <i class="fas fa-eye"></i> VIEW FULL CONFIG
+                </button>
+            </div>
+        </div>
+
+        <!-- ACTION SECTION -->
+        <div class="action-section">
+            <h2><i class="fas fa-play-circle"></i> INITIALIZE SIMULATION</h2>
+            <p style="margin-bottom: 25px; color: rgba(255,255,255,0.7); font-size: 14px;">
+                Both forces configured and ready. Click below to visualize the mission on tactical map.
+            </p>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Blue Forces</div>
+                    <div class="stat-value" id="stat-blue-drones">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Red Defenses</div>
+                    <div class="stat-value" id="stat-red-ads">{{ red_config.config_data.ads|length }}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Targets</div>
+                    <div class="stat-value" id="stat-targets">{{ red_config.config_data.targets|length }}</div>
+                </div>
+            </div>
+
+            <div class="readiness-bar">
+                <div class="readiness-fill">✓ MISSION READINESS: 100%</div>
+            </div>
+
+            <div class="action-buttons" style="margin-top: 25px;">
+                <button class="btn-primary" onclick="startSimulation()">
+                    <i class="fas fa-rocket"></i> START SIMULATION
+                </button>
+                <button class="btn-secondary" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i> BACK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORCE DETAIL MODAL -->
+    <div id="configModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Configuration Details</h2>
+                <button class="modal-close" onclick="closeForceDetail()">✕</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load mission data
+        function loadMissionData() {
+            const missionId = {{ mission.id }};
+            
+            fetch(`/config/api/mission-data/?mission_id=${missionId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'SUCCESS') {
+                        // Blue Force
+                        const blueDrones = data.blue_force.drones || [];
+                        let totalBlue = 0;
+                        
+                        blueDrones.forEach(d => {
+                            totalBlue += d.quantity || 0;
+                        });
+                        
+                        document.getElementById('blue-total-drones').textContent = totalBlue;
+                        document.getElementById('stat-blue-drones').textContent = totalBlue;
+                        
+                        // Store for modal
+                        window.blueForceData = data.blue_force;
+                        window.redForceData = data.red_force;
+                    }
+                })
+                .catch(e => console.error('Error loading mission data:', e));
+        }
+
+        function showForceDetail(force) {
+            const modal = document.getElementById('configModal');
+            const title = document.getElementById('modalTitle');
+            const body = document.getElementById('modalBody');
+            
+            if (force === 'blue') {
+                title.innerHTML = '<i class="fas fa-chevron-right" style="color: #0066ff;"></i> BLUE FORCE CONFIGURATION';
+                const data = window.blueForceData || {};
+                
+                let html = `
+                    <h3 style="color: #0066ff; margin: 20px 0 15px; text-transform: uppercase;">📍 BASES</h3>
+                    <table class="config-detail-table">
+                `;
+                
+                const bases = data.bases || [];
+                bases.forEach(base => {
+                    html += `
+                        <tr>
+                            <td>${base.name || 'N/A'}</td>
+                            <td>LAT: ${base.latitude?.toFixed(2)}, LON: ${base.longitude?.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                html += `</table>`;
+                
+                html += `
+                    <h3 style="color: #0066ff; margin: 20px 0 15px; text-transform: uppercase;">🚁 DRONE COMPOSITION</h3>
+                    <table class="config-detail-table">
+                `;
+                
+                const drones = data.drones || [];
+                drones.forEach(drone => {
+                    html += `
+                        <tr>
+                            <td>${drone.drone_type || 'N/A'}</td>
+                            <td>QUANTITY: ${drone.quantity}</td>
+                        </tr>
+                    `;
+                });
+                html += `</table>`;
+                
+                body.innerHTML = html;
+            } else {
+                title.innerHTML = '<i class="fas fa-shield-alt" style="color: #ff3333;"></i> RED FORCE CONFIGURATION';
+                const data = window.redForceData || {};
+                
+                let html = `
+                    <h3 style="color: #ff3333; margin: 20px 0 15px; text-transform: uppercase;">🎯 TARGETS</h3>
+                    <table class="config-detail-table">
+                `;
+                
+                const targets = data.targets || [];
+                targets.forEach(target => {
+                    html += `
+                        <tr>
+                            <td>${target.name || 'N/A'}</td>
+                            <td>LAT: ${target.latitude?.toFixed(2)}, LON: ${target.longitude?.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                html += `</table>`;
+                
+                html += `
+                    <h3 style="color: #ff3333; margin: 20px 0 15px; text-transform: uppercase;">🛡️ ADS SYSTEMS</h3>
+                    <table class="config-detail-table">
+                `;
+                
+                const ads = data.ads || [];
+                ads.forEach(a => {
+                    html += `
+                        <tr>
+                            <td>${a.ads_type || 'N/A'}</td>
+                            <td>LAT: ${a.latitude?.toFixed(2)}, LON: ${a.longitude?.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                html += `</table>`;
+                
+                body.innerHTML = html;
+            }
+            
+            modal.classList.add('active');
+        }
+
+        function closeForceDetail() {
+            document.getElementById('configModal').classList.remove('active');
+        }
+
+        function startSimulation() {
+            const missionId = {{ mission.id }};
+            window.location.href = `/config/mission/${missionId}/simulation-start/`;
+        }
+
+        // Close modal on background click
+        document.getElementById('configModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeForceDetail();
+            }
+        });
+
+        // Load data on page load
+        loadMissionData();
+    </script>
+</body>
+</html>

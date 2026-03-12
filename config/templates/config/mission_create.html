@@ -1,0 +1,175 @@
+{% extends 'config/base.html' %}
+{% load static %}
+
+{% block title %}MISSION BRIEFING - DRONE WARFARE COMMAND{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;800&family=Rajdhani:wght@300;600;700&family=Space+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+<style>
+    :root {
+        --p-cyan: #00F2FF;
+        --action-orange: #FF8C00;
+        --army-dark: #06080A;
+        --glass-bg: rgba(10, 15, 20, 0.6); /* Reduced opacity for better BG visibility */
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body, html {
+        font-family: 'Rajdhani', sans-serif;
+        background: var(--army-dark);
+        color: #FFF;
+        height: 100%; width: 100%;
+        overflow: hidden;
+    }
+
+    /* Background Setup */
+    .bg-container {
+        position: fixed; inset: 0;
+        background-image: url('{% static "images/bg14.jpg" %}');
+        background-size: cover; background-position: center;
+        z-index: 0;
+    }
+
+    .hud-vignette {
+        position: fixed; inset: 0; z-index: 1;
+        background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.6) 100%);
+        pointer-events: none;
+    }
+
+    /* Minimal Navigation */
+    nav {
+        position: fixed; top: 0; left: 0; right: 0; height: 70px;
+        padding: 0 60px; display: flex; justify-content: space-between; align-items: center;
+        z-index: 1000; background: rgba(0,0,0,0.4);
+        border-bottom: 1px solid rgba(0, 242, 255, 0.1);
+        backdrop-filter: blur(5px);
+    }
+
+    .brand { display: flex; align-items: center; gap: 15px; }
+    .brand img { height: 45px; filter: drop-shadow(0 0 5px var(--p-cyan)); }
+    .brand span { font-family: 'Oxanium'; font-weight: 800; font-size: 20px; letter-spacing: 2px; color: var(--p-cyan); }
+
+    .nav-links a {
+        text-decoration: none; font-family: 'Oxanium'; color: #FFF;
+        font-size: 11px; letter-spacing: 1px; padding: 8px 18px;
+        border: 1px solid rgba(255, 255, 255, 0.2); margin-left: 10px;
+        text-transform: uppercase; transition: 0.3s;
+    }
+    .nav-links a:hover { border-color: var(--p-cyan); color: var(--p-cyan); }
+
+    /* Centered Glass Card */
+    .content-wrapper {
+        position: relative; z-index: 10;
+        height: 100vh; display: flex; justify-content: center; align-items: center;
+    }
+
+    .mission-card {
+        background: var(--glass-bg);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 50px;
+        width: 100%; max-width: 500px;
+        backdrop-filter: blur(12px);
+        text-align: center;
+        border-radius: 4px;
+    }
+
+    .mission-title {
+        font-family: 'Oxanium'; font-size: 32px; font-weight: 800;
+        letter-spacing: 4px; color: #FFF; text-transform: uppercase;
+        margin-bottom: 30px; border-bottom: 1px solid rgba(0, 242, 255, 0.2);
+        padding-bottom: 15px;
+    }
+    .mission-title span { color: var(--p-cyan); }
+
+    /* Form Styling */
+    .form-group { text-align: left; margin-bottom: 25px; }
+    .form-label {
+        font-family: 'Space Mono'; font-size: 10px; color: var(--p-cyan);
+        text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; display: block;
+    }
+
+    input[type="text"], .form-control {
+        width: 100% !important; background: rgba(0,0,0,0.5) !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        padding: 14px !important; color: #FFF !important;
+        font-family: 'Space Mono' !important; font-size: 14px !important;
+        transition: 0.3s;
+    }
+    input[type="text"]:focus {
+        border-color: var(--p-cyan) !important; outline: none;
+        background: rgba(0, 242, 255, 0.05) !important;
+    }
+
+    /* Launch Button */
+    .btn-launch {
+        width: 100%; background: var(--action-orange); border: none;
+        color: #000; padding: 18px;
+        font-family: 'Oxanium'; font-size: 16px; font-weight: 800;
+        letter-spacing: 4px; cursor: pointer; text-transform: uppercase;
+        transition: 0.3s; margin-top: 10px;
+    }
+    .btn-launch:hover {
+        filter: brightness(1.2); transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(255, 140, 0, 0.3);
+    }
+
+    /* Minimalist Footer */
+    footer {
+        position: fixed; bottom: 0; width: 100%; height: 50px;
+        padding: 0 60px; background: rgba(0,0,0,0.7);
+        display: flex; justify-content: space-between; align-items: center;
+        font-family: 'Space Mono'; font-size: 10px; color: #888; z-index: 100;
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .status-active { color: #00FF88; font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-container"></div>
+<div class="hud-vignette"></div>
+
+<nav>
+    <div class="brand">
+        <img src="{% static 'images/Wardec-Logo.png' %}" alt="Logo">
+        <span>DWWIAT</span>
+    </div>
+    <div class="nav-links">
+        <a href="/">HOME</a>
+        <a href="/config/mission/">MISSIONS</a>
+        <a href="/reports/">REPORTS</a>
+    </div>
+</nav>
+
+<div class="content-wrapper">
+    <div class="mission-card">
+        <div class="mission-title">INIT<span>_CMD</span></div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Mission Designation</label>
+                {{ form.mission_name }}
+            </div>
+
+            <button type="submit" class="btn-launch">
+                CONFIRM DEPLOYMENT <i class="fas fa-chevron-right" style="margin-left:10px;"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<footer>
+    <div>SECURE_TERMINAL // AUTH: LVL_4</div>
+    <div class="status-active">
+        <span style="animation: blink 1.5s infinite;">●</span> SYSTEM_READY
+    </div>
+</footer>
+
+<style>
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+</style>
+{% endblock %}

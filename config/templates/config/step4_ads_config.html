@@ -1,0 +1,921 @@
+{% extends 'config/base.html' %}
+{% load static %}
+
+{% block title %}ADS CONFIGURATION // DRONE WARFARE COMMAND{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'Cesium/Build/CesiumUnminified/Widgets/widgets.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    :root {
+        --primary-accent: #00D9FF;
+        --primary-glow: rgba(0, 217, 255, 0.4);
+        --cyber-green: #00FF41;
+        --warning: #FFB700;
+        --success: #34C759;
+        --enemy: #FF3B30;
+        --neutral-text: #E8E8E8;
+        --secondary-text: #8A8A8E;
+        --dark-bg: #0B0E11;
+        --panel-bg: rgba(15, 20, 25, 0.20);
+        --t-olive: #4A5D4E;
+        --gold: #FFD700;
+        --army-dark: #080A0C;
+    }
+
+    footer {
+        display: none !important;
+    }
+
+    body {
+        font-family: 'Rajdhani', sans-serif;
+        background: var(--dark-bg);
+        color: var(--neutral-text);
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .placement-content {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        padding: 0;
+        margin: 0;
+        z-index: 1;
+    }
+
+    .placement-header {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 50;
+        max-width: 400px;
+        margin: 0;
+    }
+
+    .placement-title {
+        font-size: 24px;
+        margin-bottom: 4px;
+        color: var(--neutral-text);
+    }
+
+    .placement-subtitle {
+        font-size: 10px;
+        margin-bottom: 0;
+        color: var(--secondary-text);
+    }
+
+    #cesiumContainer {
+        width: 100%;
+        height: 100vh;
+        background: #1a1a1a;
+        border: none;
+        border-radius: 0;
+        display: block;
+    }
+
+    .cesium-viewer .cesium-viewer-geocoderContainer {
+        top: 20px !important;
+        left: 20px !important;
+        width: auto !important;
+        z-index: 10 !important;
+    }
+
+    .cesium-geocoder-input {
+        background: rgba(0, 0, 0, 0.8) !important;
+        border: 1.5px solid var(--t-olive) !important;
+        color: var(--neutral-text) !important;
+        font-family: 'Space Mono', monospace !important;
+        border-radius: 4px !important;
+    }
+
+    .cesium-geocoder-input::placeholder {
+        color: var(--secondary-text) !important;
+    }
+
+    .cesium-geocoder-selectedResult {
+        background: var(--t-olive) !important;
+        color: var(--gold) !important;
+    }
+
+    #coordsBox {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 100;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1.5px solid var(--t-olive);
+        padding: 12px 20px;
+        border-radius: 4px;
+        font-family: 'Space Mono', monospace;
+        font-size: 13px;
+        color: var(--cyber-green);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        letter-spacing: 1px;
+    }
+
+    .control-panel-overlay {
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        width: 380px;
+        max-height: calc(100vh - 140px);
+        z-index: 51;
+        background: rgba(15, 20, 25, 0.95);
+        border: 1.5px solid var(--t-olive);
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+        padding: 20px;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transform: translateX(420px);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .control-panel-overlay.open {
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .control-panel-toggle {
+        position: fixed;
+        top: 100px;
+        width: 45px;
+        height: 45px;
+        z-index: 52;
+        background: rgba(15, 20, 25, 0.95);
+        border: 1.5px solid var(--t-olive);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        font-size: 22px;
+        color: var(--gold);
+        border-radius: 8px 0 0 8px;
+        right: 20px;
+    }
+
+    .control-panel-toggle.open {
+        right: 410px;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .control-panel-toggle:hover {
+        background: rgba(15, 20, 25, 0.99);
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+        transform: scale(1.05);
+    }
+
+    @media (max-width: 1024px) {
+        .control-panel-toggle {
+            display: none;
+        }
+        
+        .control-panel-overlay {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .control-panel-overlay {
+            width: calc(100% - 40px);
+            left: 20px;
+            right: 20px;
+            bottom: 100px;
+            top: auto;
+            max-height: 40vh;
+        }
+        #coordsBox {
+            bottom: 420px;
+            right: 20px;
+        }
+        .pin-mode-indicator {
+            bottom: 380px;
+        }
+    }
+
+    .scenario-display-box {
+        background: rgba(74, 93, 78, 0.3);
+        border: 1.5px solid var(--t-olive);
+        padding: 12px 16px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--gold);
+        text-align: center;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .section-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--gold);
+        margin-top: 16px;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .section-title.ads::before {
+        content: "🛡️";
+        font-size: 14px;
+    }
+
+    .position-card {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1.5px solid var(--t-olive);
+        border-radius: 4px;
+        padding: 12px;
+        margin-bottom: 12px;
+        transition: all 0.3s;
+    }
+
+    .position-card:hover {
+        background: rgba(74, 93, 78, 0.2);
+        border-color: var(--gold);
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .card-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--neutral-text);
+        text-transform: uppercase;
+    }
+
+    .card-actions {
+        display: flex;
+        gap: 6px;
+    }
+
+    .btn-small {
+        background: transparent;
+        border: 1px solid var(--t-olive);
+        color: var(--gold);
+        padding: 4px 10px;
+        font-size: 9px;
+        font-weight: 600;
+        border-radius: 2px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-small:hover:not(:disabled) {
+        background: rgba(255, 215, 0, 0.1);
+        border-color: var(--gold);
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+    }
+
+    .btn-small:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        color: var(--cyber-green);
+        border-color: var(--cyber-green);
+    }
+
+    .btn-small.btn-delete {
+        border-color: var(--enemy);
+        color: var(--enemy);
+    }
+
+    .btn-small.btn-delete:hover {
+        background: rgba(255, 59, 48, 0.1);
+        box-shadow: 0 0 8px rgba(255, 59, 48, 0.2);
+    }
+
+    .card-coords {
+        font-size: 10px;
+        color: var(--cyber-green);
+        font-family: 'Space Mono', monospace;
+        margin-bottom: 10px;
+        line-height: 1.4;
+        letter-spacing: 0.5px;
+    }
+
+    .card-controls {
+        border-top: 1px solid rgba(74, 93, 78, 0.5);
+        padding-top: 10px;
+    }
+
+    .control-row {
+        margin-bottom: 10px;
+        font-size: 10px;
+    }
+
+    .control-label {
+        display: block;
+        color: var(--secondary-text);
+        font-weight: 600;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ads-type-select {
+        width: 100%;
+        background: #000;
+        color: var(--neutral-text);
+        border: 1px solid var(--t-olive);
+        padding: 6px 8px;
+        border-radius: 2px;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 10px;
+        cursor: pointer;
+    }
+
+    .ads-type-select:hover {
+        border-color: var(--gold);
+    }
+
+    .ads-type-select:focus {
+        outline: none;
+        border-color: var(--gold);
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+    }
+
+    .ads-type-select option {
+        background: #000;
+        color: var(--neutral-text);
+    }
+
+    .ads-range-input {
+        width: 100%;
+        cursor: pointer;
+        accent-color: var(--gold);
+    }
+
+    .range-display {
+        color: var(--cyber-green);
+        font-weight: 600;
+        font-family: 'Space Mono', monospace;
+    }
+
+    .status-box {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1.5px solid var(--t-olive);
+        border-radius: 4px;
+        padding: 16px;
+        margin: 16px 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .status-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .status-label {
+        font-size: 9px;
+        color: var(--secondary-text);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+    }
+
+    .status-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--cyber-green);
+        font-family: 'Space Mono', monospace;
+    }
+
+    .btn-launch {
+        width: 100%;
+        background: linear-gradient(135deg, rgba(0, 255, 65, 0.1), rgba(0, 255, 65, 0.05));
+        border: 1.5px solid var(--cyber-green);
+        color: var(--cyber-green);
+        padding: 12px 16px;
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Rajdhani', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn-launch:hover:not(:disabled) {
+        background: linear-gradient(135deg, rgba(0, 255, 65, 0.2), rgba(0, 255, 65, 0.1));
+        box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+    }
+
+    .btn-launch:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        border-color: var(--secondary-text);
+        color: var(--secondary-text);
+    }
+
+    .pin-mode-indicator {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        z-index: 100;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1.5px solid var(--secondary-text);
+        padding: 12px 16px;
+        border-radius: 4px;
+        font-size: 11px;
+        color: var(--secondary-text);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+    }
+
+    .pin-mode-indicator.active {
+        border-color: var(--cyber-green);
+        color: var(--cyber-green);
+        box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        }
+        50% {
+            box-shadow: 0 0 25px rgba(0, 255, 65, 0.5);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="placement-content">
+    <div class="placement-header">
+        <div class="placement-title">ADS_CON<span>FIG</span></div>
+        <div class="placement-subtitle">[ AIR DEFENSE SYSTEM ]</div>
+    </div>
+
+    <div id="cesiumContainer"></div>
+
+    <div id="coordsBox">Lat: -- , Lon: --</div>
+
+    <div class="pin-mode-indicator" id="pinModeIndicator">
+        📍 CLICK ON MAP TO PLACE ADS
+    </div>
+
+    <div class="control-panel-toggle" id="panelToggle" onclick="togglePanel()">
+        ▶
+    </div>
+
+    <div class="control-panel-overlay" id="controlPanel">
+        <div class="scenario-display-box" id="missionDisplay">
+            ADS Configuration Mode
+        </div>
+
+        <div>
+            <div class="section-title ads">AIR DEFENSE SYSTEMS</div>
+            <div id="adsContainer"></div>
+            <button id="addAdsBtn" class="btn-add-more" onclick="addMoreADS()">
+                <i class="fas fa-plus"></i> ADD ADS SYSTEM
+            </button>
+        </div>
+
+        <div class="status-box">
+            <div class="status-item">
+                <div class="status-label">Total</div>
+                <div class="status-value"><span id="adsCount">0</span></div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Placed</div>
+                <div class="status-value"><span id="placedCount">0</span></div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Range</div>
+                <div class="status-value"><span id="rangeDisplay">0</span>km</div>
+            </div>
+        </div>
+
+        <button class="btn-launch" onclick="saveADSConfig()" id="saveBtn" disabled>
+            <i class="fas fa-check-circle"></i> SAVE CONFIGURATION
+        </button>
+    </div>
+</div>
+
+<script src="{% static 'Cesium/Build/CesiumUnminified/Cesium.js' %}"></script>
+
+<script>
+    // Constants
+    const MISSION_ID = '{{ mission.id }}';
+    const FORCE_TYPE = '{{ force_type }}';
+    const MAX_ADS_SYSTEMS = 10;
+
+    const ADS_TYPES = {{ ads_systems_json|safe }};
+
+    // Global variables
+    let viewer;
+    let adsSystems = [];
+    let mapEntities = {};
+    let pinMode = null;
+    let handler = null;
+    let panelOpen = false;
+
+    function setupMouseCoords(viewer) {
+        const box = document.getElementById("coordsBox");
+        const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+        handler.setInputAction((movement) => {
+            const pos = movement.endPosition;
+            let cartesian = viewer.scene.pickPosition(pos);
+            if (!Cesium.defined(cartesian)) {
+                cartesian = viewer.camera.pickEllipsoid(pos, viewer.scene.globe.ellipsoid);
+            }
+
+            if (Cesium.defined(cartesian)) {
+                const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                const lat = Cesium.Math.toDegrees(cartographic.latitude).toFixed(6);
+                const lon = Cesium.Math.toDegrees(cartographic.longitude).toFixed(6);
+                box.textContent = `Lat: ${lat} , Lon: ${lon}`;
+            } else {
+                box.textContent = `Lat: -- , Lon: --`;
+            }
+        }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+    }
+
+    async function loadTerrainAndAutoFly(viewer) {
+        try {
+            const terrainUrl = "/static/terrain/?t=" + Date.now();
+            const terrain = await Cesium.CesiumTerrainProvider.fromUrl(terrainUrl);
+            viewer.terrainProvider = terrain;
+            viewer.scene.morphTo3D(0);
+            viewer.scene.globe.depthTestAgainstTerrain = true;
+            viewer.scene.globe.terrainExaggeration = 2.5;
+            console.log("Terrain loaded ✅");
+        } catch (err) {
+            console.error("Terrain load failed ❌", err);
+        }
+    }
+
+    function setupMapClickHandlers() {
+        if (!viewer) {
+            console.error('Viewer not initialized');
+            return;
+        }
+        
+        handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+        
+        handler.setInputAction((movement) => {
+            if (!pinMode) return;
+            
+            const cartesian = viewer.scene.pickPosition(movement.position) || 
+                            viewer.camera.pickEllipsoid(movement.position, viewer.scene.globe.ellipsoid);
+            if (!cartesian) return;
+            
+            const carto = Cesium.Cartographic.fromCartesian(cartesian);
+            const lat = Cesium.Math.toDegrees(carto.latitude);
+            const lon = Cesium.Math.toDegrees(carto.longitude);
+            
+            console.log('Placed ADS at:', lat, lon);
+            placeADS(pinMode.id, lat, lon);
+            
+            pinMode = null;
+            updatePinIndicator();
+            renderCards();
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    }
+
+    function updatePinIndicator() {
+        const indicator = document.getElementById('pinModeIndicator');
+        if (indicator) {
+            if (pinMode) {
+                indicator.classList.add('active');
+            } else {
+                indicator.classList.remove('active');
+            }
+        }
+    }
+
+    function renderCards() {
+        const container = document.getElementById('adsContainer');
+        container.innerHTML = '';
+        
+        adsSystems.forEach((ads, idx) => {
+            const adsType = ADS_TYPES.find(t => t.value === ads.type) || ADS_TYPES[0];
+            const div = document.createElement('div');
+            div.className = 'position-card';
+            div.innerHTML = `
+                <div class="card-header">
+                    <div class="card-name">ADS ${idx + 1}</div>
+                    <div class="card-actions">
+                        <button class="btn-small" onclick="startPin('ads', '${ads.id}')" ${ads.lat ? 'disabled' : ''}>
+                            ${ads.lat ? '✓ PLACED' : 'PIN'}
+                        </button>
+                        <button class="btn-small btn-delete" onclick="deleteADS('${ads.id}')">✕</button>
+                    </div>
+                </div>
+                <div class="card-coords">
+                    LAT: ${ads.lat ? ads.lat.toFixed(4) : '—'}<br>
+                    LON: ${ads.lon ? ads.lon.toFixed(4) : '—'}
+                </div>
+                <div class="card-controls">
+                    <div class="control-row">
+                        <label class="control-label">System Type</label>
+                        <select class="ads-type-select" onchange="updateADSType('${ads.id}', this.value)" value="${ads.type}">
+                            ${ADS_TYPES.map(t => `<option value="${t.value}" ${ads.type === t.value ? 'selected' : ''}>${t.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="control-row">
+                        <label class="control-label">Detection Range (km)</label>
+                        <input type="range" class="ads-range-input" min="${adsType.rangeMin}" max="${adsType.rangeMax}" value="${ads.range}" onchange="updateADSRange('${ads.id}', this.value)" style="margin-bottom: 4px;">
+                        <div class="range-display">${ads.range} km</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+        
+        updateStatus();
+    }
+
+        function addMoreADS() {
+        if (adsSystems.length < MAX_ADS_SYSTEMS) {
+            const defaultADS = ADS_TYPES.length > 0 ? ADS_TYPES[0] : null;
+            if (!defaultADS) {
+                alert('No ADS systems available. Please create one in ADS Forms.');
+                return;
+            }
+            adsSystems.push({
+                id: `ads_${Date.now()}_${adsSystems.length}`,
+                lat: null,
+                lon: null,
+                type: defaultADS.value,
+                range: (defaultADS.rangeMin + defaultADS.rangeMax) / 2,
+                systemId: defaultADS.id,
+                name: defaultADS.name
+            });
+            renderCards();
+        }
+    }
+
+    function deleteADS(id) {
+        const idx = adsSystems.findIndex(a => a.id === id);
+        if (idx >= 0) {
+            if (mapEntities[id]) viewer.entities.remove(mapEntities[id]);
+            delete mapEntities[id];
+            adsSystems.splice(idx, 1);
+            renderCards();
+        }
+    }
+
+    function startPin(type, id) {
+        pinMode = {type, id};
+        updatePinIndicator();
+        console.log('Pin mode activated for ADS', id);
+    }
+
+    function placeADS(id, lat, lon) {
+        const ads = adsSystems.find(x => x.id === id);
+        if (!ads) return;
+        ads.lat = lat;
+        ads.lon = lon;
+        
+        if (viewer && viewer.entities) {
+            if (mapEntities[id]) {
+                viewer.entities.remove(mapEntities[id]);
+            }
+            
+            // Create range circle
+            const rangeMeters = (ads.range || 0) * 1000;
+            mapEntities[id] = viewer.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(lon, lat),
+                ellipse: {
+                    semiMajorAxis: rangeMeters,
+                    semiMinorAxis: rangeMeters,
+                    material: Cesium.Color.fromAlpha(Cesium.Color.RED, 0.15),
+                    outline: true,
+                    outlineColor: Cesium.Color.fromAlpha(Cesium.Color.RED, 0.5),
+                    heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+                },
+                point: {
+                    pixelSize: 12,
+                    color: Cesium.Color.RED,
+                    outlineColor: Cesium.Color.YELLOW,
+                    outlineWidth: 2
+                },
+                label: {
+                    text: ads.type.toUpperCase(),
+                    font: '11px Arial',
+                    fillColor: Cesium.Color.WHITE,
+                    pixelOffset: new Cesium.Cartesian2(0, 18),
+                    showBackground: true,
+                    backgroundColor: Cesium.Color.fromAlpha(Cesium.Color.BLACK, 0.7),
+                    backgroundPadding: new Cesium.Cartesian2(4, 2)
+                }
+            });
+        }
+    }
+
+    function updateADSType(id, type) {
+        const ads = adsSystems.find(a => a.id === id);
+        if (ads) {
+            ads.type = type;
+            const adsType = ADS_TYPES.find(t => t.value === type);
+            if (adsType && ads.range > adsType.rangeMax) {
+                ads.range = adsType.rangeMax;
+            }
+            if (adsType && ads.range < adsType.rangeMin) {
+                ads.range = adsType.rangeMin;
+            }
+            renderCards();
+            if (ads.lat && ads.lon) {
+                placeADS(id, ads.lat, ads.lon);
+            }
+        }
+    }
+
+    function updateADSRange(id, range) {
+        const ads = adsSystems.find(a => a.id === id);
+        if (ads) {
+            ads.range = parseInt(range);
+            if (ads.lat && ads.lon) {
+                placeADS(id, ads.lat, ads.lon);
+            }
+            renderCards();
+        }
+    }
+
+    function updateStatus() {
+        const placedCount = adsSystems.filter(a => a.lat && a.lon).length;
+        document.getElementById('adsCount').textContent = adsSystems.length;
+        document.getElementById('placedCount').textContent = placedCount;
+        const avgRange = adsSystems.length > 0 
+            ? Math.round(adsSystems.reduce((sum, a) => sum + a.range, 0) / adsSystems.length)
+            : 0;
+        document.getElementById('rangeDisplay').textContent = avgRange;
+        
+        const saveBtn = document.getElementById('saveBtn');
+        if (saveBtn) {
+            saveBtn.disabled = !(placedCount >= 1);
+        }
+    }
+
+    function saveADSConfig() {
+        const placedADS = adsSystems.filter(a => a.lat && a.lon);
+        
+        if (placedADS.length === 0) {
+            alert('Please place at least 1 ADS system');
+            return;
+        }
+        
+        const typeNameMap = {
+            'patriot': 'Patriot SAM',
+            's300': 'S-300 System',
+            'pantsir': 'Pantsir-S1',
+            'iris_t': 'IRIS-T System',
+            'hawk': 'Hawk System',
+            'avenger': 'Avenger MANPAD',
+            'tor': 'Tor System'
+        };
+        
+        const payload = {
+            mission_id: parseInt(MISSION_ID),
+            force_type: FORCE_TYPE.trim().toLowerCase(),
+            ads_placements: placedADS.map(ads => ({
+                ads_type_name: typeNameMap[ads.type] || ads.type,
+                latitude: parseFloat(ads.lat),
+                longitude: parseFloat(ads.lon),
+                detection_range: parseFloat(ads.range),
+                intercept_range: parseFloat(ads.range * 0.6)
+            }))
+        };
+        
+        console.log('Saving ADS config:', JSON.stringify(payload, null, 2));
+        
+        fetch('/config/api/step4/save-ads-placements/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json().then(data => ({status: r.status, data: data})))
+        .then(({status, data}) => {
+            if (status === 200 && data.success) {
+                alert('ADS Configuration saved successfully!');
+                window.location.href = data.next_url || `/config/mission/${MISSION_ID}/force/${FORCE_TYPE.trim().toLowerCase()}/step5/`;
+            } else {
+                alert('Error: ' + (data.error || data.message || 'Unknown error'));
+            }
+        })
+        .catch(e => {
+            console.error('Save error:', e);
+            alert('Error saving configuration: ' + e.message);
+        });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function togglePanel() {
+        panelOpen = !panelOpen;
+        const panel = document.getElementById('controlPanel');
+        const toggle = document.getElementById('panelToggle');
+        
+        if (panelOpen) {
+            panel.classList.add('open');
+            toggle.classList.add('open');
+            toggle.textContent = '◀';
+        } else {
+            panel.classList.remove('open');
+            toggle.classList.remove('open');
+            toggle.textContent = '▶';
+        }
+    }
+
+    // Initialize Cesium
+    async function initCesium() {
+        console.log('Initializing Cesium for ADS Config');
+        if (typeof Cesium === 'undefined') {
+            console.error('Cesium not loaded');
+            setTimeout(initCesium, 500);
+            return;
+        }
+
+        try {
+            viewer = new Cesium.Viewer("cesiumContainer", {
+                imageryProvider: new Cesium.OpenStreetMapImageryProvider(),
+                baseLayerPicker: false,
+                sceneModePicker: false,
+                navigationHelpButton: false,
+                fullscreenButton: false,
+                homeButton: false,
+                infoBox: false,
+                selectionIndicator: false,
+                timeline: false,
+                animation: false,
+                sceneMode: Cesium.SceneMode.SCENE3D,
+                geocoder: true
+            });
+
+            viewer.imageryLayers.addImageryProvider(
+                new Cesium.UrlTemplateImageryProvider({
+                    url: "{% static 'Cesium/Build/CesiumUnminified/Assets/Textures/NaturalEarthII/' %}{z}/{x}/{y}.jpg",
+                    tilingScheme: new Cesium.WebMercatorTilingScheme(),
+                    minimumLevel: 1,
+                    maximumLevel: 6,
+                })
+            );
+
+            setupMouseCoords(viewer);
+            await loadTerrainAndAutoFly(viewer);
+            setupMapClickHandlers();
+            console.log('Cesium initialization complete');
+        } catch (e) {
+            console.error('Cesium initialization failed:', e);
+        }
+    }
+
+    // Start on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('ADS Config page loaded');
+        initCesium();
+        updateStatus();
+    });
+</script>
+{% endblock %}

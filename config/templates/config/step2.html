@@ -1,0 +1,74 @@
+function initCesium() {
+    console.log('Initializing Cesium...');
+    if (typeof Cesium === 'undefined') {
+        console.error('Cesium not loaded');
+        setTimeout(initCesium, 500);
+        return;
+    }
+    
+    try {
+        // viewer = new Cesium.Viewer('cesiumContainer', {
+        //     baseLayerPicker: false,
+        //     navigationHelpButton: false,
+        //     infoBox: false,
+        //     timeline: false,
+        //     animation: false,
+        //     fullscreenButton: false,
+        //     vrButton: false,
+        //     sceneModePicker: false,
+        //     geocoder: false,
+        //     homeButton: false,
+        //     imageryProvider: new Cesium.TileMapServiceImageryProvider({
+        //         url: Cesium.IonResource.fromAssetId(3812),
+        //         maximumLevel: 18,
+        //         credit: 'USGS'
+        //     })
+        // });
+        // viewer = new Cesium.Viewer("cesiumContainer", {
+        //         baseLayer: Cesium.ImageryLayer.fromProviderAsync(
+        //             Cesium.TileMapServiceImageryProvider.fromUrl(
+        //             Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII"),
+        //             ),
+        //         ),
+        //         baseLayerPicker: false,
+        //         geocoder: false,
+        //         });
+       const viewer = new Cesium.Viewer("cesiumContainer", {
+  timeline: false,
+  animation: false,
+  sceneModePicker: false,
+  baseLayerPicker: true,
+  geocoder: false,
+//   geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
+  // The globe does not need to be displayed,
+  // since the Photorealistic 3D Tiles include terrain
+//   globe: false,
+});
+// const viewer = new Cesium.Viewer("cesiumContainer", {
+//   imageryProvider: new Cesium.UrlTemplateImageryProvider({
+//     url: "/static/Cesium/Build/CesiumUnminified/Assets/Textures/hybridMaps/{z}/{x}/{y}.jpg", // point to your downloaded tiles
+//     // tilingScheme: new Cesium.WebMercatorTilingScheme(), // Google/Hybrid uses WebMercator
+//     maximumLevel: 6,   // highest zoom level you downloaded
+//     minimumLevel: 1,   // lowest zoom level you downloaded
+//     // rectangle: Cesium.Rectangle.fromDegrees(-180, -85, 180, 85), // your coverage
+//     // credit: 'Offline Google Hybrid Tiles' // optional
+//   }),
+//   baseLayerPicker: false,
+//   geocoder: false,
+// //   terrainProvider: Cesium.createWorldTerrain(), // optional, for 3D terrain
+// //   shouldAnimate: true
+// });
+
+// Enable 3D terrain depth testing
+// viewer.scene.globe.depthTestAgainstTerrain = true;
+
+        console.log('Cesium viewer created successfully (offline mode)');
+        viewer.scene.globe.enableLighting = true;
+        setupMapClickHandlers();
+
+    } catch (e) {
+        console.error('Error initializing Cesium:', e);
+        console.log('Falling back to canvas-based map');
+        initCanvasMap();
+    }
+}

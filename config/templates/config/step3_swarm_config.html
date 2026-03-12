@@ -1,0 +1,1000 @@
+{% extends 'config/base.html' %}
+{% load static %}
+
+{% block title %}STEP 3: SWARM CONFIGURATION :: DRONE WARFARE COMMAND{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Rajdhani:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    /* UI clarity / larger typography overrides for Step 3 */
+    :root {
+      --ui-font-size: 16px;
+      --ui-heading-scale: 1.6;
+      --ui-lead: 1.25;
+      --primary-accent: #FFD700;
+      --cyber-green: #00FF41;
+      --warning: #FFB700;
+      --success: #34C759;
+      --enemy: #FF3B30;
+      --neutral-text: #E8E8E8;
+      --secondary-text: #8A8A8E;
+      --dark-bg: #0B0E11;
+      --t-olive: #4A5D4E;
+    }
+
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: var(--dark-bg);
+      color: var(--neutral-text);
+      font-size: var(--ui-font-size);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .content-area {
+        position: relative;
+        min-height: 100vh;
+        padding: 100px 32px 80px;
+    }
+
+    .page-title {
+        font-family: 'Oxanium', sans-serif;
+        font-size: clamp(32px, 5.5vw, 56px);
+        color: #FFFFFF;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        margin-bottom: 8px;
+        font-weight: 800;
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.4), 0 0 20px rgba(255, 215, 0, 0.2);
+    }
+
+    .page-subtitle {
+        font-family: 'Space Mono', monospace;
+        color: var(--t-olive);
+        font-size: clamp(12px, 2.2vw, 16px);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+        opacity: 0.95;
+    }
+
+    .layout-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 24px;
+    }
+
+    .tactical-panel {
+        background: rgba(0, 0, 0, 0.35);
+        border: 1.5px solid var(--t-olive);
+        padding: 24px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), 0 0 25px rgba(255, 215, 0, 0.15);
+        border-radius: 8px;
+    }
+
+    .section-title {
+        font-family: 'Space Mono', monospace;
+        color: #FFD700;
+        font-size: 14px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--t-olive);
+        padding-bottom: 8px;
+    }
+
+    .target-selector {
+        margin-bottom: 20px;
+    }
+
+    .target-selector label {
+        display: block;
+        color: #FFD700;
+        font-family: 'Space Mono', monospace;
+        font-size: 10px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        letter-spacing: 1px;
+    }
+
+    .target-selector select {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        color: #FFD700;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: 'Space Mono', monospace;
+    }
+
+    .target-profiling-box {
+        background: rgba(74, 93, 78, 0.15);
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        padding: 14px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    .profile-metric {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+    }
+
+    .profile-metric:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .profile-label {
+        color: var(--secondary-text);
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .profile-value {
+        color: var(--cyber-green);
+        font-family: 'Space Mono', monospace;
+        font-weight: 700;
+    }
+
+    .swarm-recommendation-box {
+        background: rgba(0, 255, 65, 0.08);
+        border-left: 3px solid var(--cyber-green);
+        padding: 12px;
+        margin: 16px 0;
+        border-radius: 3px;
+        font-size: 11px;
+        line-height: 1.6;
+        color: var(--cyber-green);
+    }
+
+    .total-drones-control {
+        margin-bottom: 20px;
+    }
+
+    .slider-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-family: 'Space Mono', monospace;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 11px;
+    }
+
+    input[type="range"] {
+        width: 100%;
+        height: 10px;
+        border-radius: 3px;
+        background: linear-gradient(to right, #FFD700, rgba(255,255,255,0.18));
+        outline: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #FFD700;
+        cursor: pointer;
+        box-shadow: 0 0 12px rgba(255,215,0,0.6);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #FFD700;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 0 12px rgba(255,215,0,0.6);
+    }
+
+    .composition-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        font-family: 'Space Mono', monospace;
+        font-size: 13px;
+    }
+
+    .composition-table th {
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid var(--t-olive);
+        padding: 12px 14px;
+        color: #FFD700;
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .composition-table td {
+        border: 1px solid rgba(255, 215, 0, 0.1);
+        padding: 12px 14px;
+        color: var(--neutral-text);
+    }
+
+    .composition-table tr:hover {
+        background: rgba(255, 215, 0, 0.08);
+    }
+
+    .percentage-input {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        color: #FFD700;
+        padding: 6px 8px;
+        border-radius: 3px;
+        width: 80px;
+        font-family: 'Space Mono', monospace;
+        font-size: 13px;
+    }
+
+    .percentage-input:focus {
+        outline: none;
+        border-color: #FFD700;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+
+    .cost-row {
+        background: rgba(255, 215, 0, 0.08);
+        border-top: 2px solid var(--t-olive);
+    }
+
+    .cost-row td {
+        font-weight: bold;
+        color: #FFD700;
+    }
+
+    .warning-panel {
+        background: rgba(255, 183, 0, 0.1);
+        border-left: 3px solid #FFB700;
+        padding: 12px;
+        margin: 16px 0;
+        border-radius: 3px;
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    .validation-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 12px 0;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: 'Space Mono', monospace;
+        font-size: 11px;
+    }
+
+    .validation-status.valid {
+        background: rgba(52, 199, 89, 0.1);
+        border: 1px solid #34C759;
+        color: #34C759;
+    }
+
+    .validation-status.invalid {
+        background: rgba(255, 59, 48, 0.1);
+        border: 1px solid #FF3B30;
+        color: #FF3B30;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .btn-launch {
+        flex: 1;
+        background: transparent;
+        border: 2px solid #FFD700;
+        color: #FFD700;
+        padding: 14px 18px;
+        font-family: 'Oxanium', sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s ease;
+        text-transform: uppercase;
+        border-radius: 6px;
+    }
+
+    .btn-launch::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: #FFD700;
+        z-index: -1;
+        transition: left 0.4s ease;
+    }
+
+    .btn-launch:hover:not(:disabled) {
+        color: #080A0C;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .btn-launch:hover:not(:disabled)::before {
+        left: 0;
+    }
+
+    .btn-launch:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .status-box {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1.5px solid var(--t-olive);
+        padding: 16px;
+        border-radius: 4px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+        font-family: 'Space Mono', monospace;
+        font-size: 10px;
+    }
+
+    .status-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .status-label {
+        color: var(--secondary-text);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-size: 12px;
+    }
+
+    .status-value {
+        color: #FFD700;
+        font-weight: 800;
+        font-size: 18px;
+    }
+
+    .bg-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background-image: url('{% static "images/bg16.jpg" %}');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        z-index: 0;
+        opacity: 0.9;
+    }
+
+    @media (max-width: 1024px) {
+        .layout-container {
+            grid-template-columns: 1fr;
+        }
+        .composition-table {
+            font-size: 10px;
+        }
+        .composition-table th, .composition-table td {
+            padding: 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-area">
+    <div class="page-title">SWARM_CONFIG<span style="color: #FFD700;">URATION</span></div>
+    <div class="page-subtitle">[ STEP 3: DRONE COMPOSITION & COSTING ]</div>
+
+    <div class="layout-container">
+        <!-- Main Content -->
+        <div class="tactical-panel">
+            <!-- Target Type Selection -->
+            <div class="target-selector">
+                <label>Target Type:</label>
+                <select id="targetTypeSelect" onchange="onTargetTypeChange()">
+                    <option value="">-- Select Target Type --</option>
+                </select>
+            </div>
+
+            <!-- Target Profiling Display -->
+            <div id="targetProfilingDisplay" style="display: none;">
+                <div class="section-title">🎯 TARGET PROFILING ANALYSIS</div>
+                <div class="target-profiling-box">
+                    <div class="profile-metric">
+                        <span class="profile-label">Target Type</span>
+                        <span class="profile-value" id="profileType">—</span>
+                    </div>
+                    <div class="profile-metric">
+                        <span class="profile-label">Threat Level</span>
+                        <span class="profile-value" id="profileThreat">—</span>
+                    </div>
+                    <div class="profile-metric">
+                        <span class="profile-label">Size Classification</span>
+                        <span class="profile-value" id="profileSize">—</span>
+                    </div>
+                    <div class="profile-metric">
+                        <span class="profile-label">Defenses</span>
+                        <span class="profile-value" id="profileDefense">—</span>
+                    </div>
+                    <div class="profile-metric">
+                        <span class="profile-label">Optimal Strategy</span>
+                        <span class="profile-value" id="profileStrategy">—</span>
+                    </div>
+                </div>
+
+                <div class="swarm-recommendation-box" id="swarmRecommendation">
+                    📡 Preparing swarm calculation...
+                </div>
+            </div>
+
+            <!-- Total Drones Control -->
+            <div class="total-drones-control">
+                <div class="slider-label">
+                    <span>TOTAL DRONES:</span>
+                    <span id="totalDronesValue">100</span>
+                </div>
+                <input type="range" id="totalDronesSlider" min="1" max="500" value="100" oninput="onTotalDronesChange()">
+                <div style="text-align: right; font-size: 10px; color: var(--secondary-text); margin-top: 6px;">
+                    <span id="autoSizeBtn" style="cursor: pointer; color: var(--cyber-green); font-weight: 700;">
+                        [ AUTO-SIZE ]
+                    </span>
+                </div>
+            </div>
+
+            <!-- Drone Composition Table -->
+            <div>
+                <div class="section-title">💾 DRONE COMPOSITION</div>
+                <table class="composition-table">
+                    <thead>
+                        <tr>
+                            <th>DRONE TYPE</th>
+                            <th>ROLE</th>
+                            <th>%</th>
+                            <th>COUNT</th>
+                            <th>UNIT COST</th>
+                            <th>SUBTOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="compositionTableBody">
+                    </tbody>
+                    <tfoot>
+                        <tr class="cost-row">
+                            <td colspan="5">TOTAL MISSION COST</td>
+                            <td id="totalCostCell">$0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Validation Panel -->
+            <div id="validationPanel"></div>
+
+            <!-- Action Buttons -->
+            <div class="button-group">
+                <button class="btn-launch" onclick="recalculateComposition()" title="Recalculate based on current settings">
+                    <i class="fas fa-sync"></i> CALCULATE
+                </button>
+                <button class="btn-launch" onclick="confirmStep3()" id="confirmBtn" disabled title="Save and proceed to step 4">
+                    <i class="fas fa-check"></i> CONFIRM
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="tactical-panel">
+            <div class="section-title">⚙️ STATUS</div>
+            
+            <div class="status-box">
+                <div class="status-item">
+                    <div class="status-label">Target Type</div>
+                    <div class="status-value" id="statusTarget" style="font-size: 12px;">—</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Total Drones</div>
+                    <div class="status-value" id="statusTotal">100</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Total Cost</div>
+                    <div class="status-value" id="statusCost" style="font-size: 13px;">$0</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Status</div>
+                    <div id="statusValidation" style="padding: 8px; border-radius: 3px;"></div>
+                </div>
+            </div>
+
+            <div id="droneRoleBreakdown" style="margin-top: 16px;">
+                <div class="section-title">🛡️ ROLE BREAKDOWN</div>
+                <div id="roleBreakdownContent" style="font-family: 'Space Mono', monospace; font-size: 12px;"></div>
+            </div>
+
+            <div id="swarmMetricsBox" style="margin-top: 16px; display: none;">
+                <div class="section-title">📊 SWARM METRICS</div>
+                <div id="swarmMetricsContent" style="font-family: 'Space Mono', monospace; font-size: 10px; line-height: 1.8;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const missionId = {{ mission.id }};
+const forceType = '{{ force_type }}';
+
+let targetTypes = [];
+let drones = [];
+let currentComposition = {};
+let targetProfilingData = {};
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    document.getElementById('autoSizeBtn').addEventListener('click', autoSizeSwarm);
+});
+
+function loadData() {
+    // Load target types
+    fetch('/config/api/target-types/', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(r => {
+        if (!r.ok) throw new Error(`Target types HTTP ${r.status}`);
+        return r.json();
+    })
+    .then(data => {
+        if (data.success && Array.isArray(data.targets)) {
+            targetTypes = data.targets;
+            console.log('Loaded target types:', targetTypes);
+            populateTargetTypes();
+        } else {
+            console.error('Invalid target response:', data);
+        }
+    })
+    .catch(error => console.error('Target types error:', error));
+
+    // Load drone types
+    fetch('/config/api/drone-types/', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(r => {
+        if (!r.ok) throw new Error(`Drone types HTTP ${r.status}`);
+        return r.json();
+    })
+    .then(data => {
+        if (data.success && Array.isArray(data.drones)) {
+            drones = data.drones;
+            console.log('Loaded drones:', drones);
+        } else {
+            console.error('Invalid drone response:', data);
+        }
+    })
+    .catch(error => console.error('Drone types error:', error));
+}
+
+function populateTargetTypes() {
+    const select = document.getElementById('targetTypeSelect');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">-- Select Target Type --</option>';
+    targetTypes.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.name;
+        select.appendChild(opt);
+    });
+}
+
+function analyzeTargetProfile(targetType) {
+    // Advanced target profiling algorithm
+    const profile = {
+        type: targetType.name,
+        category: targetType.category,
+        threatLevel: calculateThreatLevel(targetType),
+        sizeClass: classifyTargetSize(targetType),
+        defensePotential: assessDefenses(targetType),
+        recommendedStrategy: determineStrategy(targetType),
+        droneRequirements: calculateDroneRequirements(targetType)
+    };
+    
+    return profile;
+}
+
+function calculateThreatLevel(target) {
+    // Based on target category and characteristics
+    const threatMapping = {
+        'HARD_FACILITY': 'EXTREME',
+        'SOFT_FACILITY': 'HIGH',
+        'VEHICLE': 'MEDIUM',
+        'PERSONNEL': 'LOW',
+        'INFRASTRUCTURE': 'HIGH',
+        'COMMAND_CENTER': 'CRITICAL'
+    };
+    return threatMapping[target.category] || 'MEDIUM';
+}
+
+function classifyTargetSize(target) {
+    // Classification based on typical dimensions
+    const sizeMapping = {
+        'HARD_FACILITY': 'LARGE',
+        'SOFT_FACILITY': 'MEDIUM',
+        'VEHICLE': 'SMALL',
+        'PERSONNEL': 'MINIMAL',
+        'INFRASTRUCTURE': 'VARIABLE',
+        'COMMAND_CENTER': 'MEDIUM-TO-LARGE'
+    };
+    return sizeMapping[target.category] || 'MEDIUM';
+}
+
+function assessDefenses(target) {
+    const defenseMapping = {
+        'HARD_FACILITY': ['Air Defense', 'Hardened Structure', 'Multiple Layers'],
+        'SOFT_FACILITY': ['Minimal', 'Basic Perimeter'],
+        'VEHICLE': ['Mobile', 'Armor'],
+        'PERSONNEL': ['None'],
+        'INFRASTRUCTURE': ['Stationary', 'Hardened'],
+        'COMMAND_CENTER': ['Heavy AD', 'Layered Protection', 'EW Capability']
+    };
+    return defenseMapping[target.category] || ['Unknown'];
+}
+
+function determineStrategy(target) {
+    const strategyMapping = {
+        'HARD_FACILITY': 'CONCENTRATED_SWARM',
+        'SOFT_FACILITY': 'PRECISION_STRIKE',
+        'VEHICLE': 'MOBILE_INTERCEPT',
+        'PERSONNEL': 'DISTRIBUTED',
+        'INFRASTRUCTURE': 'COORDINATED_MULTI_POINT',
+        'COMMAND_CENTER': 'OVERWHELMING_SATURATION'
+    };
+    return strategyMapping[target.category] || 'STANDARD';
+}
+
+function calculateDroneRequirements(target) {
+    // Calculate required drones based on target profile
+    const baseRequirements = {
+        'HARD_FACILITY': {
+            STRIKERS: {min: 30, max: 50, percent: 40},
+            SCOUTS: {min: 10, max: 20, percent: 20},
+            SUPPORTS: {min: 5, max: 15, percent: 15},
+            JAMMERS: {min: 5, max: 10, percent: 15},
+            EW: {min: 3, max: 8, percent: 10}
+        },
+        'SOFT_FACILITY': {
+            STRIKERS: {min: 15, max: 30, percent: 35},
+            SCOUTS: {min: 8, max: 15, percent: 25},
+            SUPPORTS: {min: 3, max: 8, percent: 15},
+            JAMMERS: {min: 3, max: 6, percent: 15},
+            EW: {min: 2, max: 4, percent: 10}
+        },
+        'VEHICLE': {
+            STRIKERS: {min: 10, max: 20, percent: 40},
+            SCOUTS: {min: 5, max: 10, percent: 25},
+            SUPPORTS: {min: 2, max: 5, percent: 15},
+            JAMMERS: {min: 2, max: 5, percent: 12},
+            EW: {min: 1, max: 3, percent: 8}
+        },
+        'PERSONNEL': {
+            STRIKERS: {min: 5, max: 15, percent: 35},
+            SCOUTS: {min: 3, max: 8, percent: 30},
+            SUPPORTS: {min: 1, max: 4, percent: 15},
+            JAMMERS: {min: 1, max: 3, percent: 12},
+            EW: {min: 1, max: 2, percent: 8}
+        },
+        'COMMAND_CENTER': {
+            STRIKERS: {min: 50, max: 100, percent: 45},
+            SCOUTS: {min: 20, max: 40, percent: 20},
+            SUPPORTS: {min: 10, max: 20, percent: 15},
+            JAMMERS: {min: 8, max: 15, percent: 12},
+            EW: {min: 5, max: 12, percent: 8}
+        }
+    };
+
+    return baseRequirements[target.category] || baseRequirements['SOFT_FACILITY'];
+}
+
+function onTargetTypeChange() {
+    const targetTypeId = document.getElementById('targetTypeSelect').value;
+    if (targetTypeId) {
+        const targetType = targetTypes.find(t => t.id == targetTypeId);
+        document.getElementById('statusTarget').textContent = targetType?.name || '—';
+        
+        // Analyze target profile
+        targetProfilingData = analyzeTargetProfile(targetType);
+        displayTargetProfiling();
+        
+        // Auto-calculate recommended swarm size
+        autoSizeSwarm();
+    } else {
+        document.getElementById('statusTarget').textContent = '—';
+        document.getElementById('targetProfilingDisplay').style.display = 'none';
+        document.getElementById('swarmMetricsBox').style.display = 'none';
+    }
+}
+
+function displayTargetProfiling() {
+    const display = document.getElementById('targetProfilingDisplay');
+    display.style.display = 'block';
+    
+    document.getElementById('profileType').textContent = targetProfilingData.category;
+    document.getElementById('profileThreat').textContent = targetProfilingData.threatLevel;
+    document.getElementById('profileSize').textContent = targetProfilingData.sizeClass;
+    document.getElementById('profileDefense').textContent = targetProfilingData.defensePotential.join(' + ');
+    document.getElementById('profileStrategy').textContent = targetProfilingData.recommendedStrategy;
+    
+    const rec = document.getElementById('swarmRecommendation');
+    const reqs = targetProfilingData.droneRequirements;
+    let html = `📡 RECOMMENDED SWARM COMPOSITION:<br>`;
+    Object.entries(reqs).forEach(([role, data]) => {
+        html += `${role}: ${data.min}-${data.max} (${data.percent}%) | `;
+    });
+    rec.innerHTML = html;
+}
+
+function autoSizeSwarm() {
+    const targetTypeId = document.getElementById('targetTypeSelect').value;
+    if (!targetTypeId || !targetProfilingData.droneRequirements) {
+        alert('Please select a target type first');
+        return;
+    }
+
+    // Calculate optimal swarm size based on threat level
+    let recommendedSize = 100;
+    
+    switch(targetProfilingData.threatLevel) {
+        case 'CRITICAL':
+            recommendedSize = Math.floor(Math.random() * (500 - 300) + 300); // 300-500
+            break;
+        case 'EXTREME':
+            recommendedSize = Math.floor(Math.random() * (400 - 250) + 250); // 250-400
+            break;
+        case 'HIGH':
+            recommendedSize = Math.floor(Math.random() * (300 - 150) + 150); // 150-300
+            break;
+        case 'MEDIUM':
+            recommendedSize = Math.floor(Math.random() * (200 - 80) + 80); // 80-200
+            break;
+        case 'LOW':
+            recommendedSize = Math.floor(Math.random() * (100 - 30) + 30); // 30-100
+            break;
+    }
+
+    document.getElementById('totalDronesSlider').value = recommendedSize;
+    document.getElementById('totalDronesValue').textContent = recommendedSize;
+    document.getElementById('statusTotal').textContent = recommendedSize;
+    
+    recalculateComposition();
+}
+
+function onTotalDronesChange() {
+    const value = document.getElementById('totalDronesSlider').value;
+    document.getElementById('totalDronesValue').textContent = value;
+    document.getElementById('statusTotal').textContent = value;
+    recalculateComposition();
+}
+
+function recalculateComposition() {
+    const targetTypeId = document.getElementById('targetTypeSelect').value;
+    const totalDrones = parseInt(document.getElementById('totalDronesSlider').value);
+
+    if (!targetTypeId) {
+        alert('Please select a target type');
+        return;
+    }
+
+    fetch('/config/api/step3/calculate-swarm-cost/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            mission_id: missionId,
+            force_type: forceType,
+            target_type_id: parseInt(targetTypeId),
+            total_drones: totalDrones,
+            drone_allocation: getCurrentAllocation(),
+            target_profile: targetProfilingData
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            currentComposition = data.final_composition;
+            renderComposition(data);
+            renderSwarmMetrics(data);
+            document.getElementById('confirmBtn').disabled = !data.is_valid;
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+
+function getCurrentAllocation() {
+    const allocation = {};
+    document.querySelectorAll('.percentage-input').forEach(input => {
+        const droneId = input.getAttribute('data-drone-id');
+        allocation[droneId] = parseFloat(input.value) || 0;
+    });
+    return allocation;
+}
+
+function renderComposition(data) {
+    const tbody = document.getElementById('compositionTableBody');
+    tbody.innerHTML = '';
+
+    let totalCost = 0;
+
+    Object.values(data.final_composition).forEach(drone => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${drone.name}</td>
+            <td>${drone.role || '—'}</td>
+            <td><input type="number" class="percentage-input" data-drone-id="${drone.id}" 
+                value="${drone.percentage}" min="0" max="100" step="1" 
+                onchange="recalculateComposition()"></td>
+            <td>${drone.count}</td>
+            <td>$${drone.unit_cost.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+            <td>$${drone.subtotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+        `;
+        tbody.appendChild(row);
+        totalCost += drone.subtotal;
+    });
+
+    document.getElementById('totalCostCell').textContent = 
+        `$${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    document.getElementById('statusCost').textContent = 
+        `$${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+    renderValidation(data);
+    renderRoleBreakdown(data.final_composition);
+}
+
+function renderSwarmMetrics(data) {
+    const metricsBox = document.getElementById('swarmMetricsBox');
+    const metricsContent = document.getElementById('swarmMetricsContent');
+    
+    metricsBox.style.display = 'block';
+    
+    const totalCost = Object.values(data.final_composition).reduce((sum, d) => sum + d.subtotal, 0);
+    const avgUnitCost = totalCost / Object.values(data.final_composition).reduce((sum, d) => sum + d.count, 0);
+    
+    let html = `
+        <div>TOTAL DRONES: <strong>${data.final_composition[Object.keys(data.final_composition)[0]]?.total_count || 0}</strong></div>
+        <div>AVG COST/DRONE: <strong>$${avgUnitCost.toFixed(0)}</strong></div>
+        <div>TOTAL MISSION COST: <strong>$${totalCost.toLocaleString()}</strong></div>
+        <div>THREAT MATCH: <strong>${targetProfilingData.threatLevel || '—'}</strong></div>
+        <div>STRATEGY: <strong>${targetProfilingData.recommendedStrategy || '—'}</strong></div>
+    `;
+    
+    metricsContent.innerHTML = html;
+}
+
+function renderValidation(data) {
+    const panel = document.getElementById('validationPanel');
+    let html = '';
+
+    if (data.warnings.length > 0) {
+        data.warnings.forEach(w => {
+            html += `<div class="warning-panel"><i class="fas fa-exclamation-circle"></i> ${w}</div>`;
+        });
+    }
+
+    html += `<div class="validation-status ${data.is_valid ? 'valid' : 'invalid'}">
+        ${data.is_valid ? '✓' : '✗'} Configuration is ${data.is_valid ? 'VALID' : 'INVALID'}
+    </div>`;
+
+    panel.innerHTML = html;
+
+    const statusDiv = document.getElementById('statusValidation');
+    statusDiv.innerHTML = `<span style="color: ${data.is_valid ? '#34C759' : '#FF3B30'};">
+        ${data.is_valid ? '✓ VALID' : '✗ INVALID'}
+    </span>`;
+}
+
+function renderRoleBreakdown(composition) {
+    const roles = {};
+    Object.values(composition).forEach(drone => {
+        if (!roles[drone.role]) roles[drone.role] = 0;
+        roles[drone.role] += drone.count;
+    });
+
+    let html = '';
+    Object.entries(roles).forEach(([role, count]) => {
+        html += `<div style="margin: 4px 0;">${role}: <strong>${count}</strong></div>`;
+    });
+
+    document.getElementById('roleBreakdownContent').innerHTML = html;
+}
+
+function confirmStep3() {
+    const targetTypeId = document.getElementById('targetTypeSelect').value;
+    const totalDrones = parseInt(document.getElementById('totalDronesSlider').value);
+    const totalCostText = document.getElementById('totalCostCell').textContent.replace(/[^0-9.]/g, '');
+    const totalCost = parseFloat(totalCostText) || 0;
+
+    if (!targetTypeId) {
+        alert('Please select a target type');
+        return;
+    }
+
+    if (!currentComposition || Object.keys(currentComposition).length === 0) {
+        alert('Please calculate composition first');
+        return;
+    }
+
+    fetch('/config/api/step3/save-swarm-config/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            mission_id: missionId,
+            force_type: forceType,
+            target_type_id: parseInt(targetTypeId),
+            total_drones: totalDrones,
+            final_composition: currentComposition,
+            total_cost: totalCost,
+            target_profile: targetProfilingData
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Configuration saved! Proceeding to Strike Planning...');
+            setTimeout(() => {
+                window.location.href = `/config/mission/${missionId}/force/${forceType}/strike-planning/`;
+            }, 500);
+        } else {
+            alert('Error saving configuration: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to save configuration: ' + error.message);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

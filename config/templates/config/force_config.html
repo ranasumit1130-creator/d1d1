@@ -1,0 +1,311 @@
+{% extends 'config/base.html' %}
+{% load static %}
+
+{% block title %}STEP 1: SCENARIO SELECTION :: FORCE CONFIG{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --saffron: #FF9933;
+        --blue-team: #00d2ff;
+        --red-team: #ff3e3e;
+        --cyber-green: #00FF41;
+        --accent: {% if force_type == 'blue' %}var(--blue-team){% else %}var(--red-team){% endif %};
+    }
+    
+    .content-area {
+        position: relative;
+        min-height: 100vh;
+        background-image:
+            linear-gradient(rgba(255, 153, 51, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 153, 51, 0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
+        padding-top: 80px;
+        padding-bottom: 40px;
+    }
+    
+    .hud-panel {
+        position: relative;
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-left: 4px solid var(--accent);
+        padding: 25px;
+        margin-bottom: 25px;
+        clip-path: polygon(0 0, 96% 0, 100% 4%, 100% 100%, 4% 100%, 0 96%);
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    }
+    
+    .hud-title {
+        font-family: 'Orbitron', sans-serif;
+        color: var(--accent);
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 10px;
+    }
+    
+    .scenario-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+    
+    .scenario-card {
+        background: rgba(0, 0, 0, 0.4);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 25px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+        position: relative;
+    }
+    
+    .scenario-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 0 20px var(--accent);
+        transform: translateY(-5px);
+    }
+    
+    .scenario-card.active {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--accent);
+        box-shadow: 0 0 30px var(--accent);
+    }
+    
+    .scenario-icon {
+        font-size: 3rem;
+        margin: 15px 0;
+    }
+    
+    .scenario-name {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin: 15px 0;
+        color: white;
+    }
+    
+    .scenario-description {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.85rem;
+        line-height: 1.6;
+        margin: 10px 0;
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .btn-hud {
+        background: transparent;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        font-family: 'Orbitron', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        padding: 12px 25px;
+        transition: 0.3s;
+        cursor: pointer;
+        margin-top: 15px;
+        width: 100%;
+    }
+    
+    .btn-hud:hover:not(:disabled) {
+        background: var(--accent);
+        color: #000;
+        box-shadow: 0 0 20px var(--accent);
+    }
+    
+    .btn-hud:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    
+    .step-indicator {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--accent);
+        padding: 15px 20px;
+        margin-bottom: 30px;
+        border-radius: 4px;
+        font-family: 'Share Tech Mono', monospace;
+        color: var(--accent);
+    }
+    
+    .step-indicator span {
+        display: block;
+        margin-bottom: 5px;
+    }
+    
+    .step-indicator p {
+        margin: 8px 0 0 0;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .spinner {
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-top: 3px solid var(--accent);
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-area">
+    <div class="container-fluid px-5">
+        <!-- Header -->
+        <div class="row mb-5">
+            <div class="col-lg-10 offset-lg-1">
+                <div style="margin-bottom: 30px;">
+                    <h1 style="font-family: 'Orbitron'; color: white; margin-bottom: 10px;">
+                        FORCE_CONFIG :: <span style="color: var(--accent);">{{ force_type|upper }}</span>
+                    </h1>
+                    <span style="font-family: 'Share Tech Mono'; color: var(--saffron);">
+                        MISSION: {{ mission.name }}
+                    </span>
+                </div>
+                
+                <!-- Step Indicator -->
+                <div class="step-indicator">
+                    <span style="color: var(--accent); font-weight: bold;">► STEP 1 OF 5: SCENARIO SELECTION</span>
+                    <p>Lock in your mission scenario. This determines allowed bases and targets.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="row">
+            <div class="col-lg-10 offset-lg-1">
+                <div class="hud-panel">
+                    <div class="hud-title">
+                        <i class="bi bi-diagram-3"></i> SELECT TACTICAL SCENARIO
+                    </div>
+                    
+                    <p style="font-family: 'Share Tech Mono'; color: rgba(255,255,255,0.7); margin-bottom: 30px;">
+                        Choose your mission topology. Each scenario defines constraints for bases and targets.
+                    </p>
+                    
+                    <!-- Scenario Cards -->
+                    <div class="scenario-grid">
+                        <div class="scenario-card" data-scenario="1-1" onclick="selectScenario('1-1', this)">
+                            <div class="scenario-icon">🎯</div>
+                            <div class="scenario-name">One Base → One Target</div>
+                            <div class="scenario-description">
+                                Single launch point strikes single objective. Simplest configuration.
+                            </div>
+                        </div>
+                        
+                        <div class="scenario-card" data-scenario="1-M" onclick="selectScenario('1-M', this)">
+                            <div class="scenario-icon">🎯🎯</div>
+                            <div class="scenario-name">One Base → Multiple Targets</div>
+                            <div class="scenario-description">
+                                Single base coordinates simultaneous strikes on multiple objectives.
+                            </div>
+                        </div>
+                        
+                        <div class="scenario-card" data-scenario="M-1" onclick="selectScenario('M-1', this)">
+                            <div class="scenario-icon">🚀🎯</div>
+                            <div class="scenario-name">Multiple Bases → One Target</div>
+                            <div class="scenario-description">
+                                Multiple launch points converge on single high-value target.
+                            </div>
+                        </div>
+                        
+                        <div class="scenario-card" data-scenario="M-M" onclick="selectScenario('M-M', this)">
+                            <div class="scenario-icon">🚀🎯🎯</div>
+                            <div class="scenario-name">Multiple Bases → Multiple Targets</div>
+                            <div class="scenario-description">
+                                Complex multi-base, multi-target operation with high coordination overhead.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Button -->
+                    <div style="margin-top: 30px; text-align: center;">
+                        <button type="button" class="btn-hud" id="confirmBtn" disabled onclick="confirmScenario()">
+                            CONFIRM_SELECTION → PROCEED_TO_STEP_2
+                        </button>
+                    </div>
+                    
+                    <div class="loading" id="loadingSpinner">
+                        <div class="spinner"></div>
+                        <p style="margin-top: 10px; font-family: 'Share Tech Mono';">PROCESSING...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedScenario = null;
+
+function selectScenario(scenario, element) {
+    // Remove active class from all cards
+    document.querySelectorAll('.scenario-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    
+    // Add active class to clicked card
+    element.classList.add('active');
+    selectedScenario = scenario;
+    
+    // Enable confirm button
+    document.getElementById('confirmBtn').disabled = false;
+}
+
+function confirmScenario() {
+    if (!selectedScenario) return;
+    
+    const btn = document.getElementById('confirmBtn');
+    btn.disabled = true;
+    document.getElementById('loadingSpinner').style.display = 'block';
+    
+    fetch('/config/api/step1/select-scenario/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            scenario: selectedScenario,
+            mission_id: {{ mission.id }},
+            force_type: '{{ force_type }}'
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = `/config/mission/{{ mission.id }}/force/{{ force_type }}/step2/`;
+        } else {
+            alert('Error: ' + data.error);
+            btn.disabled = false;
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+    })
+    .catch(err => {
+        alert('Error: ' + err);
+        btn.disabled = false;
+        document.getElementById('loadingSpinner').style.display = 'none';
+    });
+}
+</script>
+{% endblock %}

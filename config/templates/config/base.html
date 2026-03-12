@@ -1,0 +1,554 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DRONE WARFARE COMMAND CENTER{% endblock %}</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scrollbar-width: thin;
+            scrollbar-color: #00D9FF #1a2322;
+        }
+
+        :root {
+            --primary-accent: #00D9FF;
+            --primary-glow: rgba(0, 217, 255, 0.4);
+            --cyber-green: #00FF41;
+            --warning: #FFB700;
+            --success: #34C759;
+            --enemy: #FF3B30;
+            --neutral-text: #E8E8E8;
+            --secondary-text: #8A8A8E;
+            --dark-bg: #0B0E11;
+            --panel-bg: rgba(15, 20, 25, 0.20);
+            --t-olive: #4A5D4E;
+            --blue-team: #00D9FF;
+            --red-team: #FF3B30;
+            --gold: #FFD700;
+            --army-dark: #080A0C;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            color: var(--neutral-text);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-image: url('{% static "images/bg16.jpg" %}');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            z-index: 0;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 2px, transparent 2px, transparent 4px);
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0.15;
+            mix-blend-mode: overlay;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: linear-gradient(135deg, rgba(8, 10, 12, 0.98) 0%, rgba(47, 79, 79, 0.95) 100%);
+            border-bottom: 2px solid var(--t-olive);
+            padding: 0 60px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1);
+        }
+
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .logo-box img {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.3));
+        }
+
+        .logo-box > div {
+            height: 40px;
+            width: 2px;
+            background: var(--t-olive);
+        }
+
+        .logo-box > span {
+            font-family: 'Oxanium', sans-serif;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #E0E0E0;
+            text-transform: uppercase;
+            font-size: 16px;
+        }
+
+        nav > a {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        nav > a:hover .logo-box {
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+        }
+
+        nav > a:hover .logo-box span {
+            color: var(--gold);
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+
+        /* Mission Info Section */
+        .mission-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin: 0 40px;
+        }
+
+        .mission-divider {
+            height: 40px;
+            width: 1px;
+            background: var(--t-olive);
+        }
+
+        .mission-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .mission-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            color: var(--secondary-text);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .mission-name {
+            font-family: 'Oxanium', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-links a {
+            font-family: 'Oxanium', sans-serif;
+            color: #E0E0E0;
+            text-decoration: none;
+            font-size: 11px;
+            padding: 10px 20px;
+            border: 1.5px solid var(--t-olive);
+            background: rgba(74, 93, 78, 0.15);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .nav-links a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--t-olive);
+            z-index: -1;
+            transition: left 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--army-dark);
+            border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .nav-links a:hover::before {
+            left: 0;
+        }
+
+        /* Content Wrapper */
+        .main-container {
+            position: relative;
+            z-index: 3;
+            padding: 100px 32px 40px;
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--panel-bg);
+            border: 1.5px solid rgba(0, 217, 255, 0.3);
+            padding: 30px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(0, 217, 255, 0.1);
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, var(--primary-accent), transparent);
+            opacity: 0.5;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(0, 217, 255, 0.5);
+            box-shadow: 0 12px 40px rgba(0, 217, 255, 0.15);
+            background: var(--panel-bg);
+        }
+
+        .config-section {
+            background: var(--panel-bg);
+            border: 1.5px solid rgba(0, 217, 255, 0.3);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: relative;
+        }
+
+        .config-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 30px;
+            background: var(--primary-accent);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .config-section h3 {
+            color: var(--neutral-text);
+            font-family: 'Oxanium', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .config-section h3 i {
+            color: var(--primary-accent);
+            font-size: 18px;
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .config-section p {
+            color: var(--secondary-text);
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* Form Elements */
+        .form-control, .form-select {
+            background: rgba(0, 0, 0, 0.25) !important;
+            border: 1.5px solid rgba(0, 217, 255, 0.35) !important;
+            border-radius: 4px !important;
+            color: var(--neutral-text) !important;
+            font-family: 'Space Mono', monospace;
+            padding: 12px 15px !important;
+            font-size: 0.95rem !important;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: rgba(0, 217, 255, 0.12) !important;
+            border-color: var(--primary-accent) !important;
+            color: var(--neutral-text) !important;
+            box-shadow: 0 0 15px var(--primary-glow) !important;
+        }
+
+        .form-label {
+            color: var(--secondary-text);
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        /* Buttons */
+        .btn-submit {
+            background: transparent;
+            border: 1.5px solid var(--primary-accent);
+            color: var(--primary-accent);
+            font-family: 'Oxanium', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 14px 30px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-accent);
+            z-index: -1;
+            transition: left 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            color: var(--dark-bg);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .btn-submit:hover::before {
+            left: 0;
+        }
+
+        /* Alerts */
+        .alert {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            border-radius: 6px;
+            color: var(--neutral-text);
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(12px);
+        }
+
+        .alert-success {
+            border-left: 3px solid var(--success);
+        }
+
+        .alert-warning {
+            border-left: 3px solid var(--warning);
+        }
+
+        .alert-danger {
+            border-left: 3px solid var(--enemy);
+        }
+
+        .alert-info {
+            border-left: 3px solid var(--primary-accent);
+        }
+
+        /* Tables */
+        .table {
+            color: var(--neutral-text);
+            font-size: 0.9rem;
+        }
+
+        .table thead {
+            border-bottom: 1.5px solid rgba(0, 217, 255, 0.3);
+            background: rgba(0, 217, 255, 0.05);
+        }
+
+        .table thead th {
+            color: var(--primary-accent);
+            font-family: 'Oxanium', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 15px;
+        }
+
+        .table tbody td {
+            border-bottom: 1px solid rgba(0, 217, 255, 0.15);
+            padding: 12px 15px;
+            color: var(--secondary-text);
+        }
+
+        .table tbody tr:hover {
+            background: rgba(0, 217, 255, 0.05);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 50px;
+            border-top: 1px solid rgba(0, 217, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px 32px;
+            text-align: center;
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            position: relative;
+            z-index: 5;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--secondary-text);
+            backdrop-filter: blur(8px);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-container { padding: 90px 20px 30px; }
+            nav { padding: 0 20px; }
+            .logo-box > span { font-size: 14px; }
+            .mission-info { margin: 0 20px; }
+            .config-section { padding: 20px 15px; }
+            .glass-card { padding: 20px; }
+            .nav-links { gap: 10px; }
+            .nav-links a { padding: 8px 14px; font-size: 9px; }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Background -->
+    <div class="bg-container"></div>
+    <div class="overlay"></div>
+    <div class="scanline"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="/" style="text-decoration: none; display: flex; align-items: center; gap: 15px;">
+            <div class="logo-box">
+                <img src="{% static 'images/Wardec-Logo.png' %}" alt="DWWIAT" onerror="this.style.display='none'">
+                <div></div>
+                <span>DWWIAT</span>
+            </div>
+        </a>
+        
+        {% if mission %}
+        <div class="mission-info">
+            <div class="mission-divider"></div>
+            <div class="mission-details">
+                <span class="mission-label">ACTIVE MISSION</span>
+                <span class="mission-name">{{ mission.name }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="nav-links">
+            <a href="/">HOME</a>
+            <a href="/config/mission/">MISSIONS</a>
+            <a href="#reports">REPORTS</a>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div style="position: relative; z-index: 3; padding: 100px 32px 20px;">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" style="background-color: var(--primary-accent);"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <div class="main-container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        © 2025 INDIAN ARMY DRONE COMMAND • DWWIAT • TACTICAL OPERATIONS SUITE
+        <div style="margin-top: 8px;">
+            <span class="status-indicator"></span>SYSTEM ONLINE
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
